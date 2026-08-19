@@ -34,20 +34,16 @@ flowchart LR
 使用 curl：
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/weekitmo/dsh-notify/main/install.sh | sh
+curl -fsSL https://github.com/weekitmo/dsh-notify/releases/latest/download/install.sh | sh
 ```
 
 或使用 wget：
 
 ```sh
-wget -qO- https://raw.githubusercontent.com/weekitmo/dsh-notify/main/install.sh | sh
+wget -qO- https://github.com/weekitmo/dsh-notify/releases/latest/download/install.sh | sh
 ```
 
-`install.sh` 会跟随 GitHub Latest Release 的公开重定向，解析最新稳定 tag，并用固定 tag 安装；不会消耗 GitHub API 配额，也不会跟随 `main` 安装未发布代码。可通过环境变量覆盖 profile 或版本：
-
-```sh
-DSH_NOTIFY_PROFILE=web DSH_NOTIFY_VERSION=v0.1.1 sh -c "$(curl -fsSL https://raw.githubusercontent.com/weekitmo/dsh-notify/main/install.sh)"
-```
+这两个便捷命令执行 GitHub **Latest Release asset**，不会执行 `main` 上的未发布脚本；`install.sh` 再从公开重定向解析最新稳定 tag，不消耗 GitHub API 配额。`latest` 会随发布变化，并非可复现或校验安装；自动化部署请使用下面的固定版本与校验和方式。
 
 ### 固定版本安装（推荐用于可复现部署）
 
@@ -63,6 +59,18 @@ dsh plugin --profile web add \
 ```sh
 dsh plugin --profile web add \
   https://github.com/weekitmo/dsh-notify/releases/download/v0.1.1/dsh-notify-0.1.1.tgz
+```
+
+Release 同时发布 `SHA256SUMS`。安全或可复现安装建议先固定版本、下载并校验资产，再执行：
+
+```sh
+mkdir dsh-notify-v0.1.1 && cd dsh-notify-v0.1.1
+curl -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.1.1/install.sh
+curl -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.1.1/dsh-notify-0.1.1.tgz
+curl -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.1.1/SHA256SUMS
+sha256sum -c SHA256SUMS        # Linux
+# shasum -a 256 -c SHA256SUMS # macOS
+dsh plugin --profile web add "$PWD/dsh-notify-0.1.1.tgz"
 ```
 
 ### 从源码安装
@@ -163,7 +171,7 @@ pnpm version:bump patch --tag --push
 pnpm version:bump prepatch --preid rc --tag --push
 ```
 
-也可以传入明确版本，例如 `pnpm version:bump 1.0.0 --tag --push`。脚本会同步更新 README 中的固定 tag 和 `.tgz` 链接，并拒绝脏工作树、非法 SemVer 和重复 tag；tag push 后，`.github/workflows/release.yml` 会再次验证版本、执行 `pnpm run check`、确认 `lib/` 无差异、生成中文 release log，并上传预构建 `.tgz` 与 `install.sh`。
+也可以传入明确版本，例如 `pnpm version:bump 1.0.0 --tag --push`。脚本会同步更新 README 中的固定 tag 和 `.tgz` 链接，并拒绝脏工作树、非法 SemVer 和重复 tag；tag push 后，`.github/workflows/release.yml` 会再次验证版本、执行 `pnpm run check`、确认 `lib/` 无差异、生成中文结构的 release log，并上传预构建 `.tgz`、`install.sh` 与 `SHA256SUMS`。
 
 ## License
 

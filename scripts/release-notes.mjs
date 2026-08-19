@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, isAbsolute, join } from 'node:path'
@@ -28,8 +28,12 @@ const inputVersion = version.replace(/^v/, '')
 if (!semver.valid(inputVersion)) fail('Invalid release version: ' + inputVersion)
 version = inputVersion
 const tag = 'v' + version
-const tags = git('tag', '--list', 'v[0-9]*', '--sort=-v:refname').split('\n').filter(Boolean).filter(value => value !== tag)
-from ||= tags[0] || null
+const previousTags = git('tag', '--list', 'v*').split('\n')
+  .filter(Boolean)
+  .map(tagName => ({ tagName, version: semver.valid(tagName.replace(/^v/, '')) }))
+  .filter(candidate => candidate.version && semver.lt(candidate.version, version) && isAncestor(candidate.tagName))
+  .sort((left, right) => semver.rcompare(left.version, right.version))
+from ||= previousTags[0]?.tagName || null
 const range = from ? from + '..HEAD' : 'HEAD'
 const commits = git('log', range, '--format=%s%x09%h').split('\n').filter(Boolean)
 const groups = new Map([
@@ -80,6 +84,7 @@ notes.push(
   '',
   '- ' + code + 'pnpm run check' + code + '（类型检查、测试和构建）由 GitHub Actions 在发布前执行。',
   '- 发布包包含已构建的 ' + code + 'lib/' + code + '；DSH 安装时不会自动执行插件的 build。',
+  '- Release 同时发布 ' + code + 'SHA256SUMS' + code + '，用于校验预构建包与安装脚本。',
   '',
   '## 安装',
   '',
@@ -105,6 +110,14 @@ function git(...arguments_) {
   } catch (error) {
     fail('git ' + arguments_.join(' ') + ' failed: ' + error.message)
   }
+}
+
+function isAncestor(tagName) {
+  const result = spawnSync('git', ['merge-base', '--is-ancestor', tagName, 'HEAD'], { cwd: root, encoding: 'utf8' })
+  if (result.error) fail('git merge-base failed: ' + result.error.message)
+  if (result.status === 0) return true
+  if (result.status === 1) return false
+  fail('git merge-base failed with exit code ' + result.status + ': ' + result.stderr.trim())
 }
 
 function fail(message) {

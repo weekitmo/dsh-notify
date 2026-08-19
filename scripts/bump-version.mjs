@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
@@ -32,7 +32,7 @@ for (let index = 0; index < args.length; index += 1) {
 }
 
 if (!mode) fail('Missing bump mode or explicit version')
-if (!preid || !/^[0-9A-Za-z-]+$/.test(preid)) fail('--preid must be a valid SemVer identifier')
+if (!preid || !semver.valid('0.0.0-' + preid)) fail('--preid must contain valid dot-separated SemVer identifiers')
 if (push && !createTag) fail('--push requires --tag')
 
 const current = packageJson.version
@@ -47,7 +47,7 @@ const versionChanged = nextVersion !== current
 
 if (!versionChanged && !createTag) fail('Version is already ' + nextVersion)
 if (createTag && dirtyBefore) fail('Refusing --tag with a dirty worktree. Commit or stash existing changes first.')
-if (git('rev-parse', '--verify', '--quiet', 'refs/tags/' + tagName)) fail('Git tag ' + tagName + ' already exists')
+if (tagExists(tagName)) fail('Git tag ' + tagName + ' already exists')
 
 console.log(packageJson.name + ': ' + current + ' -> ' + nextVersion)
 console.log('Release tag: ' + tagName)
@@ -72,14 +72,25 @@ if (createTag) {
   }
   execFileSync('git', ['tag', '--annotate', tagName, '--message', packageJson.name + ' ' + tagName], { cwd: root, stdio: 'inherit' })
   if (push) execFileSync('git', ['push', '--atomic', 'origin', 'HEAD', tagName], { cwd: root, stdio: 'inherit' })
-  console.log('Created ' + tagName + (push ? '. Pushed commit and tag.' : '. Push it with: git push origin HEAD ' + tagName))
+  console.log('Created ' + tagName + (push ? '. Pushed commit and tag.' : '. Push it with: git push --atomic origin HEAD ' + tagName))
 } else {
   console.log('Updated package.json. Run pnpm install --lockfile-only and pnpm run check, then create ' + tagName + '.')
 }
 
 function git(...arguments_) {
-  try { return execFileSync('git', arguments_, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() }
-  catch { return '' }
+  try {
+    return execFileSync('git', arguments_, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim()
+  } catch (error) {
+    fail('git ' + arguments_.join(' ') + ' failed: ' + (error.stderr?.trim() || error.message))
+  }
+}
+
+function tagExists(tagName) {
+  const result = spawnSync('git', ['show-ref', '--verify', '--quiet', 'refs/tags/' + tagName], { cwd: root, encoding: 'utf8' })
+  if (result.error) fail('git show-ref failed: ' + result.error.message)
+  if (result.status === 0) return true
+  if (result.status === 1) return false
+  fail('git show-ref failed with exit code ' + result.status + ': ' + result.stderr.trim())
 }
 
 function fail(message) {

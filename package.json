@@ -41,7 +41,11 @@
     "dsh",
     "dsh-plugin",
     "notification",
-    "desktop-notification"
+    "desktop-notification",
+    "browser-notification",
+    "task-notification",
+    "web-ui",
+    "typescript"
   ],
   "dsh": {
     "bundle": {
