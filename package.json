@@ -1,6 +1,6 @@
 {
   "name": "dsh-notify",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Unified desktop, browser-title, and sidebar completion notifications for DeepSeek Harness.",
   "license": "MIT",
   "type": "module",
