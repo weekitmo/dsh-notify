@@ -32,13 +32,13 @@ Or use wget:
 wget -qO- https://github.com/weekitmo/dsh-notify/releases/latest/download/install.sh | sh
 ```
 
-From Windows CMD, use the native batch installer:
+From Windows CMD, clone the repository and run the batch installer. Confirm execution if Windows asks for permission:
 
 ```bat
-curl.exe -fsSLO https://github.com/weekitmo/dsh-notify/releases/latest/download/install.bat && install.bat
+git clone --depth 1 https://github.com/weekitmo/dsh-notify.git
+cd dsh-notify
+install.bat
 ```
-
-`install.sh` does not run natively in CMD or PowerShell. On Windows, use `install.bat`, or run the shell installer from Git Bash or WSL.
 
 Refresh the WebUI after installation. If the plugin does not load automatically, restart the corresponding `dsh web` process and refresh the page again.
 

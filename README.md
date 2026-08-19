@@ -32,13 +32,13 @@ curl -fsSL https://github.com/weekitmo/dsh-notify/releases/latest/download/insta
 wget -qO- https://github.com/weekitmo/dsh-notify/releases/latest/download/install.sh | sh
 ```
 
-Windows CMD 使用原生批处理安装器：
+Windows CMD 克隆仓库后运行批处理安装器；系统询问是否允许执行时请确认：
 
 ```bat
-curl.exe -fsSLO https://github.com/weekitmo/dsh-notify/releases/latest/download/install.bat && install.bat
+git clone --depth 1 https://github.com/weekitmo/dsh-notify.git
+cd dsh-notify
+install.bat
 ```
-
-`install.sh` 不能在 CMD 或 PowerShell 中原生运行；Windows 上请使用 `install.bat`，或在 Git Bash/WSL 中运行 shell 版本。
 
 安装后刷新 WebUI。若插件没有自动加载，重启对应的 `dsh web` 进程后再刷新页面。
 
