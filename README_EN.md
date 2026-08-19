@@ -9,6 +9,7 @@ A task status notification plugin for DeepSeek Harness. It provides clear status
 ## Features
 
 - **System notifications**: Receive notifications for completed, failed, aborted, blocked, and token-limited tasks. Each result type can be disabled separately.
+- **DingTalk robot**: Configure an Access Token and Signing Secret, independently select success/completion or failure/abort messages, and use do-not-disturb with a missed-message summary.
 - **Tab status**: Shows the latest workspace session title while idle, a spinner and session count while running, and an unread result count after completion or failure.
 - **Sidebar indicators**: Shows a green dot for an unread completed session and a red dot for an error, abort, block, or token limit. Opening the session clears the indicator.
 - **Native state compatibility**: Active sessions keep the built-in DSH loading state, while approval and question prompts keep their native warning state.
@@ -49,9 +50,10 @@ For pinned versions, checksum verification, and source installation, see the [in
 1. Open **Settings > Notifications** in the WebUI.
 2. Enable the notification features you need.
 3. For system notifications, click **Request permission** and allow notifications in the browser prompt.
-4. Keep the defaults or adjust tab indicators, the running spinner, sidebar indicators, and result types.
+4. For DingTalk notifications, open the official setup guide from the DingTalk group, create a custom robot, enter its Access Token and Signing Secret, select the outcomes to send, and save.
+5. Keep the defaults or adjust tab indicators, the running spinner, sidebar indicators, and result types.
 
-After browser notification permission has been denied, the page cannot force the permission prompt to appear again. Re-enable notifications in the site's permission settings from the browser address bar.
+DingTalk outcome filters are independent from browser notification switches. Disabling system notifications or a local outcome does not disable an enabled DingTalk category. After browser notification permission has been denied, the page cannot force the permission prompt to appear again. Re-enable notifications in the site's permission settings from the browser address bar.
 
 ## Configuration
 
@@ -67,6 +69,12 @@ Browser settings are stored in `localStorage` for the current site. The defaults
 | Green/red sidebar indicators | On |
 | All five result types | On |
 | Unread result animation | Marquee |
+| DingTalk success/completed messages | On (after credentials are configured) |
+| DingTalk failed/aborted messages | On (includes errors, blocks, and token limits) |
+| DingTalk do not disturb | Off (default window 23:00-08:00) |
+| Missed-message summary after do not disturb | Off |
+
+DingTalk credentials and policy are stored in `$DSH_HOME/dsh-notify/settings.json`, never in browser `localStorage`, and the API never returns credentials to the page. Credential management accepts only same-origin WebUI requests over a local loopback address; DingTalk settings cannot be changed through a LAN or public WebUI address. Do not disturb uses `Asia/Shanghai`, supports overnight ranges, and persists held messages in `dingtalk-missed.json` before sending one digest at the end. Ordinary task results also enter this durable queue before delivery and retry after failure or restart. Delivery is at least once: an extreme crash window may duplicate a message, but does not silently lose it. Rotating robot credentials clears the old queue before saving the new credentials, and disabling an outcome category removes matching pending messages. POSIX systems use a `0700` directory and `0600` files; Windows relies on the current user's file ACL while still rejecting symlinks and non-regular files.
 
 The host-side maximum length of the latest response summary can be configured in `$DSH_HOME/profiles/web/cordis.patch.yml`:
 

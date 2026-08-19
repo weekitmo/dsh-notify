@@ -3,6 +3,7 @@ import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 import type { AttentionEntry, NotificationReason, NotificationSettings } from '../contract.ts'
 import { asReason, reasonEnabled, toneOf } from './decision.ts'
+import { loadDingTalkSettings, saveDingTalkSettings, sendDingTalkTest } from './dingtalk.ts'
 import { FaviconNotifier } from './favicon.ts'
 import { NotifySettingsSection, type SettingsInjected } from './SettingsSection.tsx'
 import { en, NS, zh, type NotifyKey } from './locales.ts'
@@ -138,7 +139,7 @@ export function apply(ctx: ClientContext): void {
         observedTurns.set(id, advanced.turn)
         if (!advanced.fresh || projection === undefined) continue
         const reason = asReason(projection.reason)
-        if (reason === undefined || !currentSettings.enabled || !reasonEnabled(currentSettings, reason)) continue
+        if (reason === undefined) continue
         const entry: AttentionEntry = {
           sessionId: id,
           turn: projection.turn,
@@ -148,6 +149,7 @@ export function apply(ctx: ClientContext): void {
           body: projection.body,
           createdAt: Date.now(),
         }
+        if (!currentSettings.enabled || !reasonEnabled(currentSettings, reason)) continue
         if (state.current !== id || document.hidden) attention.put(entry)
         const permission = notificationsApi()?.permission ?? 'denied'
         if (shouldShowSystem(permission, currentSettings, document.hidden, id, state.current)) show(entry)
@@ -199,6 +201,14 @@ export function apply(ctx: ClientContext): void {
     order: 60,
     label: () => t('nav'),
     locale: NS,
-    inject: (): SettingsInjected => ({ hooks: { settings }, set, requestPermission, sendTest }),
+    inject: (): SettingsInjected => ({
+      hooks: { settings },
+      set,
+      requestPermission,
+      sendTest,
+      loadDingTalk: loadDingTalkSettings,
+      saveDingTalk: saveDingTalkSettings,
+      testDingTalk: sendDingTalkTest,
+    }),
   }, NotifySettingsSection))
 }

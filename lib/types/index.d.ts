@@ -10,4 +10,4 @@ export declare const Config: z<Schemastery.ObjectS<{
 }>, Schemastery.ObjectT<{
     maxBodyChars: z<number, number>;
 }>>;
-export declare function apply(ctx: Context, config?: Config): void;
+export declare function apply(ctx: Context, config?: Config): Promise<void>;

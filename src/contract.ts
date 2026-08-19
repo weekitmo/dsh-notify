@@ -10,6 +10,31 @@ export interface NotifyProjectionValue {
   readonly body: string
 }
 
+export interface DingTalkPublicSettings {
+  readonly configured: boolean
+  readonly notifyCompleted: boolean
+  readonly notifyFailed: boolean
+  readonly quietHoursEnabled: boolean
+  readonly quietHoursStart: string
+  readonly quietHoursEnd: string
+  readonly notifyMissed: boolean
+}
+
+export interface DingTalkSettingsUpdate extends Omit<DingTalkPublicSettings, 'configured'> {
+  readonly accessToken?: string
+  readonly signingSecret?: string
+  readonly clearCredentials?: boolean
+}
+
+export interface DingTalkNotification {
+  readonly eventId: string
+  readonly sessionId: string
+  readonly turn: number
+  readonly reason: NotificationReason
+  readonly title: string
+  readonly body: string
+}
+
 export interface NotificationSettings {
   readonly enabled: boolean
   readonly systemNotifications: boolean
