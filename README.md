@@ -1,5 +1,7 @@
 # dsh-notify
 
+[English](README_EN.md) | 简体中文
+
 [![CI](https://github.com/weekitmo/dsh-notify/actions/workflows/ci.yml/badge.svg)](https://github.com/weekitmo/dsh-notify/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/weekitmo/dsh-notify)](https://github.com/weekitmo/dsh-notify/releases/latest) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 DeepSeek Harness 的任务状态通知插件。它在任务运行、完成或异常时，通过系统通知、浏览器 Tab 标题和左侧会话列表提供明确的状态提示。
@@ -7,27 +9,14 @@ DeepSeek Harness 的任务状态通知插件。它在任务运行、完成或异
 ## 功能
 
 - **系统通知**：完成、错误、中止、阻塞、Token 限制均可通知；可在设置中单独关闭某一类。
-- **Tab 状态**：全局空闲时稳定显示最近工作区会话标题，切换到其他 Tab 后可滚动或闪烁；运行中显示转圈和会话数；完成或异常会折叠成未读结果计数。空闲 hidden 状态可选用 `#3964fe` favicon 提示。
-- **侧栏状态灯**：会话完成且尚未查看时，标题前显示绿色圆点；错误、中止、阻塞或 Token 限制显示红色圆点。打开该会话后清除。
-- **不干扰运行状态**：执行中的 session 保留 DSH 自带 loading，等待审批或回答时保留原生警告状态，不与插件状态灯叠加。
-- **设置页**：在 WebUI 的 **设置 > 通知** 中配置总开关、系统通知权限、Tab 动画、空闲标题动效、空闲 favicon、运行中 spinner、侧栏状态灯和五类结果开关。
-
-```mermaid
-flowchart LR
-  A[任务运行] --> B[Tab 转圈与运行数量]
-  C[任务结束] --> D{结束结果}
-  D -->|完成| E[绿色未读状态灯]
-  D -->|错误/中止/阻塞/Token 限制| F[红色未读状态灯]
-  E --> G[系统通知]
-  F --> G
-  E --> H[Tab 未读汇总]
-  F --> H
-  I[打开会话] --> J[清除对应未读状态]
-```
+- **Tab 状态**：空闲时显示最近工作区会话标题；运行中显示 spinner 和会话数；完成或异常后显示未读结果计数。
+- **侧栏状态灯**：会话完成且尚未查看时显示绿色圆点；错误、中止、阻塞或 Token 限制显示红色圆点。打开会话后清除。
+- **状态兼容**：执行中的会话保留 DSH 自带 loading，等待审批或回答时保留原生警告状态。
+- **可配置**：可在 WebUI 的 **设置 > 通知** 中控制通知权限、Tab 动效、favicon、spinner、侧栏状态灯和结果类型。
 
 ## 安装
 
-前置条件：已安装 `dsh`，且 `pnpm` 在 `PATH` 中。`dsh plugin` 会把安装参数转交给 pnpm。
+前置条件：已安装 `dsh`，且 `pnpm` 在 `PATH` 中。
 
 ### 一行安装最新稳定版
 
@@ -43,70 +32,22 @@ curl -fsSL https://github.com/weekitmo/dsh-notify/releases/latest/download/insta
 wget -qO- https://github.com/weekitmo/dsh-notify/releases/latest/download/install.sh | sh
 ```
 
-这两个便捷命令执行 GitHub **Latest Release asset**，不会执行 `main` 上的未发布脚本；`install.sh` 再从公开重定向解析最新稳定 tag，不消耗 GitHub API 配额。`latest` 会随发布变化，并非可复现或校验安装；自动化部署请使用下面的固定版本与校验和方式。
+安装后刷新 WebUI。若插件没有自动加载，重启对应的 `dsh web` 进程后再刷新页面。
 
-### 固定版本安装（推荐用于可复现部署）
+固定版本、校验和与源码安装方式见 [安装说明](docs/installation.md)。
 
-当前版本：`v0.1.4`。
-
-```sh
-dsh plugin --profile web add \
-  git+https://github.com/weekitmo/dsh-notify.git#v0.1.4
-```
-
-也可以安装 Release 中由 CI 产出的预构建包，不需要 git checkout：
-
-```sh
-dsh plugin --profile web add \
-  https://github.com/weekitmo/dsh-notify/releases/download/v0.1.4/dsh-notify-0.1.4.tgz
-```
-
-Release 同时发布 `SHA256SUMS`。安全或可复现安装建议先固定版本、下载并校验资产，再执行：
-
-```sh
-mkdir dsh-notify-v0.1.4 && cd dsh-notify-v0.1.4
-curl -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.1.4/install.sh
-curl -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.1.4/dsh-notify-0.1.4.tgz
-curl -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.1.4/SHA256SUMS
-sha256sum -c SHA256SUMS        # Linux
-# shasum -a 256 -c SHA256SUMS # macOS
-dsh plugin --profile web add "$PWD/dsh-notify-0.1.4.tgz"
-```
-
-### 从源码安装
-
-```sh
-git clone --branch v0.1.4 --depth 1 https://github.com/weekitmo/dsh-notify.git
-cd dsh-notify
-corepack enable
-pnpm install --frozen-lockfile
-pnpm run check
-dsh plugin --profile web add "file:$PWD"
-```
-
-DSH 不会为 `file:`、Git tag 或 GitHub 源码 archive 额外执行插件的 `build`。本仓库因此提交并发布 `lib/`；从源码开发时仍应运行 `pnpm run check`，确保构建产物与 `src/` 一致。
-
-安装后刷新 WebUI。当前运行中的 DSH Web 会自动发现已更新的 profile bundle；若你的部署未启用热更新，重启对应 `dsh web` 进程后刷新页面。
-
-## 卸载
-
-```sh
-dsh plugin --profile web remove dsh-notify
-```
-
-刷新页面；若你的 Web 进程没有自动重载 profile bundle，重启对应 `dsh web` 进程。
-
-## 使用
+## 启用与使用
 
 1. 打开 WebUI 的 **设置 > 通知**。
-2. 点击 **请求授权**，在浏览器提示中允许通知。
-3. 保持默认配置，或分别调整系统通知、Tab 提示、运行中 spinner、侧栏状态灯及结果类型。
+2. 开启需要的通知功能。
+3. 如需系统通知，点击 **请求授权**，并在浏览器提示中允许通知。
+4. 保持默认配置，或分别调整 Tab 提示、运行中 spinner、侧栏状态灯及结果类型。
 
 浏览器通知权限被拒后，网页无法再次强制弹出授权框；请从浏览器地址栏的站点权限设置中重新允许通知。
 
 ## 配置
 
-浏览器侧设置保存在当前站点的 `localStorage`，默认全部开启：
+浏览器侧设置保存在当前站点的 `localStorage`，默认配置如下：
 
 | 设置 | 默认 |
 | --- | --- |
@@ -128,52 +69,19 @@ Host 侧可配置最近回复摘要的最大长度。在 `$DSH_HOME/profiles/web
     maxBodyChars: 400
 ```
 
-## 已知限制
-
-- 系统通知需要浏览器页面保持打开，并受浏览器与操作系统通知权限共同控制。
-- 当前 DSH 没有公开的 session-row adornment slot；侧栏状态灯会在结构不匹配或存在同名会话时安全跳过，不会猜测目标会话。
-- `document.title` 只能使用文本动画，因此运行中提示使用 Unicode spinner，而不是 CSS 圆环。
-
-## 开发
+## 卸载
 
 ```sh
-corepack enable
-pnpm install --frozen-lockfile
-pnpm run check
-pnpm pack
+dsh plugin --profile web remove dsh-notify
 ```
 
-`pnpm run check` 会执行类型检查、测试、构建和发布脚本自检。发布前必须提交 `lib/` 构建产物；远程安装直接消费这些文件，DSH 不会自动构建插件。
+刷新页面；若插件仍然存在，重启对应的 `dsh web` 进程。
 
-## 版本与发布
+## 相关文档
 
-版本和 tag 遵循 [Semantic Versioning 2.0.0](https://semver.org/lang/zh-CN/)：
-
-- `patch`：向后兼容的问题修复。
-- `minor`：向后兼容的新功能。
-- `major`：不兼容的 API 或行为变更。
-- `prepatch` / `preminor` / `premajor` / `prerelease`：预发布版本，默认标识为 `rc`。
-
-先预览下一版本，不修改文件：
-
-```sh
-pnpm version:bump patch --dry-run
-pnpm version:bump preminor --preid beta --dry-run
-```
-
-发布前先提交所有功能代码和最新 `lib/`，保持工作树干净，然后一条命令完成 bump、检查、版本提交、annotated tag 和原子 push：
-
-```sh
-pnpm version:bump patch --tag --push
-```
-
-预发布示例：
-
-```sh
-pnpm version:bump prepatch --preid rc --tag --push
-```
-
-也可以传入明确版本，例如 `pnpm version:bump 1.0.0 --tag --push`。脚本会同步更新 README 中的固定 tag 和 `.tgz` 链接，并拒绝脏工作树、非法 SemVer 和重复 tag；tag push 后，`.github/workflows/release.yml` 会再次验证版本、执行 `pnpm run check`、确认 `lib/` 无差异、生成中文结构的 release log，并上传预构建 `.tgz`、`install.sh` 与 `SHA256SUMS`。
+- [安装说明](docs/installation.md)：固定版本、SHA256 校验和源码安装。
+- [开发说明](docs/development.md)：已知限制、本地开发和检查命令。
+- [版本与发布](docs/releasing.md)：版本规范与维护者发布流程。
 
 ## License
 

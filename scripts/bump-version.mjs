@@ -7,7 +7,7 @@ import semver from 'semver'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const packagePath = join(root, 'package.json')
-const readmePath = join(root, 'README.md')
+const installationPath = join(root, 'docs', 'installation.md')
 const packageJson = JSON.parse(readFileSync(packagePath, 'utf8'))
 const args = process.argv.slice(2)
 const modes = new Set(['major', 'minor', 'patch', 'premajor', 'preminor', 'prepatch', 'prerelease'])
@@ -56,10 +56,10 @@ if (dryRun) process.exit(0)
 if (versionChanged) {
   packageJson.version = nextVersion
   writeFileSync(packagePath, JSON.stringify(packageJson, null, 2) + String.fromCharCode(10))
-  const readme = readFileSync(readmePath, 'utf8')
+  const installation = readFileSync(installationPath, 'utf8')
     .replaceAll('v' + current, 'v' + nextVersion)
     .replaceAll('dsh-notify-' + current + '.tgz', 'dsh-notify-' + nextVersion + '.tgz')
-  writeFileSync(readmePath, readme)
+  writeFileSync(installationPath, installation)
 }
 
 if (createTag) {
@@ -67,7 +67,7 @@ if (createTag) {
   execFileSync('pnpm', ['run', 'check'], { cwd: root, stdio: 'inherit' })
   execFileSync('git', ['diff', '--exit-code', '--', 'lib'], { cwd: root, stdio: 'inherit' })
   if (versionChanged) {
-    execFileSync('git', ['add', 'package.json', 'pnpm-lock.yaml', 'README.md'], { cwd: root, stdio: 'inherit' })
+    execFileSync('git', ['add', 'package.json', 'pnpm-lock.yaml', 'docs/installation.md'], { cwd: root, stdio: 'inherit' })
     execFileSync('git', ['commit', '-m', 'chore(release): ' + tagName], { cwd: root, stdio: 'inherit' })
   }
   execFileSync('git', ['tag', '--annotate', tagName, '--message', packageJson.name + ' ' + tagName], { cwd: root, stdio: 'inherit' })
