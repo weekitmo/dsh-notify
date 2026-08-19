@@ -71,7 +71,7 @@ if (createTag) {
     execFileSync('git', ['commit', '-m', 'chore(release): ' + tagName], { cwd: root, stdio: 'inherit' })
   }
   execFileSync('git', ['tag', '--annotate', tagName, '--message', packageJson.name + ' ' + tagName], { cwd: root, stdio: 'inherit' })
-  if (push) execFileSync('git', ['push', 'origin', 'HEAD', tagName], { cwd: root, stdio: 'inherit' })
+  if (push) execFileSync('git', ['push', '--atomic', 'origin', 'HEAD', tagName], { cwd: root, stdio: 'inherit' })
   console.log('Created ' + tagName + (push ? '. Pushed commit and tag.' : '. Push it with: git push origin HEAD ' + tagName))
 } else {
   console.log('Updated package.json. Run pnpm install --lockfile-only and pnpm run check, then create ' + tagName + '.')

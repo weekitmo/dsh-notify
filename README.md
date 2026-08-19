@@ -151,7 +151,7 @@ pnpm version:bump patch --dry-run
 pnpm version:bump preminor --preid beta --dry-run
 ```
 
-发布前先提交所有功能代码和最新 `lib/`，保持工作树干净，然后一条命令完成 bump、检查、版本提交、annotated tag 和 push：
+发布前先提交所有功能代码和最新 `lib/`，保持工作树干净，然后一条命令完成 bump、检查、版本提交、annotated tag 和原子 push：
 
 ```sh
 pnpm version:bump patch --tag --push
