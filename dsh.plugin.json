@@ -1,7 +1,0 @@
-{
-  "name": "dsh-notify",
-  "description": "Desktop, tab-title, and sidebar notifications for DeepSeek Harness",
-  "version": "0.1.0",
-  "entry": { "name": "dsh-notify", "inject": ["sessionProjections"] },
-  "client": { "platform": "web" }
-}

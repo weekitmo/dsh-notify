@@ -150,7 +150,7 @@ dsh (2 个会话进行中 · 3 个会话已完成 · 1 个会话错误 · 1 个�
 | 侧栏状态圆点 | 开 | 显示绿色或红色波纹圆点 |
 | 五类结束结果 | 全开 | 可逐类关闭通知与未读状态 |
 
-Host 侧只有投影正文长度预算，必要时可在 profile 的 `cordis.yml` 中覆盖：
+Host 侧只有投影正文长度预算，必要时可在 `$DSH_HOME/profiles/web/cordis.patch.yml` 中覆盖：
 
 ```yaml
 - id: dsh-notify
