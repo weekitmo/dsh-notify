@@ -43,7 +43,7 @@ curl -fsSL https://raw.githubusercontent.com/weekitmo/dsh-notify/main/install.sh
 wget -qO- https://raw.githubusercontent.com/weekitmo/dsh-notify/main/install.sh | sh
 ```
 
-`install.sh` 会查询 GitHub Latest Release，解析最新稳定 tag，并用固定 tag 安装；不会跟随 `main` 安装未发布代码。可通过环境变量覆盖 profile 或版本：
+`install.sh` 会跟随 GitHub Latest Release 的公开重定向，解析最新稳定 tag，并用固定 tag 安装；不会消耗 GitHub API 配额，也不会跟随 `main` 安装未发布代码。可通过环境变量覆盖 profile 或版本：
 
 ```sh
 DSH_NOTIFY_PROFILE=web DSH_NOTIFY_VERSION=v0.1.0 sh -c "$(curl -fsSL https://raw.githubusercontent.com/weekitmo/dsh-notify/main/install.sh)"

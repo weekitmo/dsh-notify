@@ -5,7 +5,7 @@ OWNER=weekitmo
 REPO=dsh-notify
 PROFILE=${DSH_NOTIFY_PROFILE:-web}
 VERSION=${DSH_NOTIFY_VERSION:-}
-API_URL="https://api.github.com/repos/${OWNER}/${REPO}/releases/latest"
+LATEST_URL="https://github.com/${OWNER}/${REPO}/releases/latest"
 REPOSITORY="git+https://github.com/${OWNER}/${REPO}.git"
 
 fail() {
@@ -16,18 +16,21 @@ fail() {
 command -v dsh >/dev/null 2>&1 || fail 'dsh is required; install DeepSeek Harness first.'
 command -v pnpm >/dev/null 2>&1 || fail 'pnpm is required because dsh plugin delegates installation to pnpm.'
 
-fetch() {
+resolve_latest() {
   if command -v curl >/dev/null 2>&1; then
-    curl -fsSL --retry 3 --retry-delay 1 -H 'Accept: application/vnd.github+json' -H 'User-Agent: dsh-notify-installer' "$1"
+    redirect=$(curl -fsSL --retry 3 --retry-delay 1 -o /dev/null -w '%{url_effective}' "$LATEST_URL")
+    printf '%s\n' "${redirect##*/}"
   elif command -v wget >/dev/null 2>&1; then
-    wget -qO- "$1"
+    wget --server-response --spider "$LATEST_URL" 2>&1 \
+      | sed -n 's|^[[:space:]]*[Ll]ocation: .*/tag/\([^[:space:]]*\).*|\1|p' \
+      | tail -n 1
   else
     fail 'curl or wget is required to discover the latest release.'
   fi
 }
 
 if [ -z "$VERSION" ]; then
-  VERSION=$(fetch "$API_URL" | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"[:space:]]*\)".*/\1/p' | head -n 1)
+  VERSION=$(resolve_latest)
   [ -n "$VERSION" ] || fail 'could not determine the latest GitHub release tag.'
 fi
 case "$VERSION" in
