@@ -1,5 +1,7 @@
 # dsh-notify
 
+[![CI](https://github.com/weekitmo/dsh-notify/actions/workflows/ci.yml/badge.svg)](https://github.com/weekitmo/dsh-notify/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/weekitmo/dsh-notify)](https://github.com/weekitmo/dsh-notify/releases/latest) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 DeepSeek Harness 的任务状态通知插件。它在任务运行、完成或异常时，通过系统通知、浏览器 Tab 标题和左侧会话列表提供明确的状态提示。
 
 ## 功能
@@ -25,26 +27,58 @@ flowchart LR
 
 ## 安装
 
-### 本地安装
+前置条件：已安装 `dsh`，且 `pnpm` 在 `PATH` 中。`dsh plugin` 会把安装参数转交给 pnpm。
 
-在本仓库目录执行：
+### 一行安装最新稳定版
+
+使用 curl：
 
 ```sh
-dsh plugin --profile web add "file:$PWD"
+curl -fsSL https://raw.githubusercontent.com/weekitmo/dsh-notify/main/install.sh | sh
 ```
 
-安装后刷新 WebUI。当前运行中的 DSH Web 会自动发现已更新的 profile bundle；若你的部署未启用热更新，重启对应 `dsh web` 进程后刷新页面。
+或使用 wget：
 
-### GitHub Release 安装
+```sh
+wget -qO- https://raw.githubusercontent.com/weekitmo/dsh-notify/main/install.sh | sh
+```
 
-创建 `v0.1.0` tag 后，使用已构建的 GitHub release archive 安装：
+`install.sh` 会查询 GitHub Latest Release，解析最新稳定 tag，并用固定 tag 安装；不会跟随 `main` 安装未发布代码。可通过环境变量覆盖 profile 或版本：
+
+```sh
+DSH_NOTIFY_PROFILE=web DSH_NOTIFY_VERSION=v0.1.0 sh -c "$(curl -fsSL https://raw.githubusercontent.com/weekitmo/dsh-notify/main/install.sh)"
+```
+
+### 固定版本安装（推荐用于可复现部署）
+
+当前版本：`v0.1.0`。
 
 ```sh
 dsh plugin --profile web add \
-  "https://github.com/weekitmo/dsh-notify/archive/refs/tags/v0.1.0.tar.gz"
+  git+https://github.com/weekitmo/dsh-notify.git#v0.1.0
 ```
 
-发布 tag 前，可使用本地安装方式。
+也可以安装 Release 中由 CI 产出的预构建包，不需要 git checkout：
+
+```sh
+dsh plugin --profile web add \
+  https://github.com/weekitmo/dsh-notify/releases/download/v0.1.0/dsh-notify-0.1.0.tgz
+```
+
+### 从源码安装
+
+```sh
+git clone --branch v0.1.0 --depth 1 https://github.com/weekitmo/dsh-notify.git
+cd dsh-notify
+corepack enable
+pnpm install --frozen-lockfile
+pnpm run check
+dsh plugin --profile web add "file:$PWD"
+```
+
+DSH 不会为 `file:`、Git tag 或 GitHub 源码 archive 额外执行插件的 `build`。本仓库因此提交并发布 `lib/`；从源码开发时仍应运行 `pnpm run check`，确保构建产物与 `src/` 一致。
+
+安装后刷新 WebUI。当前运行中的 DSH Web 会自动发现已更新的 profile bundle；若你的部署未启用热更新，重启对应 `dsh web` 进程后刷新页面。
 
 ## 卸载
 
@@ -93,12 +127,43 @@ Host 侧可配置最近回复摘要的最大长度。在 `$DSH_HOME/profiles/web
 ## 开发
 
 ```sh
-pnpm install
+corepack enable
+pnpm install --frozen-lockfile
 pnpm run check
 pnpm pack
 ```
 
-`pnpm run check` 会执行类型检查、测试和构建。发布前需要提交 `lib/` 构建产物，并在 GitHub 仓库设置中添加 `dsh-plugin` topic。
+`pnpm run check` 会执行类型检查、测试、构建和发布脚本自检。发布前必须提交 `lib/` 构建产物；远程安装直接消费这些文件，DSH 不会自动构建插件。
+
+## 版本与发布
+
+版本和 tag 遵循 [Semantic Versioning 2.0.0](https://semver.org/lang/zh-CN/)：
+
+- `patch`：向后兼容的问题修复。
+- `minor`：向后兼容的新功能。
+- `major`：不兼容的 API 或行为变更。
+- `prepatch` / `preminor` / `premajor` / `prerelease`：预发布版本，默认标识为 `rc`。
+
+先预览下一版本，不修改文件：
+
+```sh
+pnpm version:bump patch --dry-run
+pnpm version:bump preminor --preid beta --dry-run
+```
+
+发布前先提交所有功能代码和最新 `lib/`，保持工作树干净，然后一条命令完成 bump、检查、版本提交、annotated tag 和 push：
+
+```sh
+pnpm version:bump patch --tag --push
+```
+
+预发布示例：
+
+```sh
+pnpm version:bump prepatch --preid rc --tag --push
+```
+
+也可以传入明确版本，例如 `pnpm version:bump 1.0.0 --tag --push`。脚本会同步更新 README 中的固定 tag 和 `.tgz` 链接，并拒绝脏工作树、非法 SemVer 和重复 tag；tag push 后，`.github/workflows/release.yml` 会再次验证版本、执行 `pnpm run check`、确认 `lib/` 无差异、生成中文 release log，并上传预构建 `.tgz` 与 `install.sh`。
 
 ## License
 

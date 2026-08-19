@@ -4,6 +4,7 @@
   "description": "Unified desktop, browser-title, and sidebar completion notifications for DeepSeek Harness.",
   "license": "MIT",
   "type": "module",
+  "packageManager": "pnpm@11.7.0",
   "main": "lib/index.js",
   "types": "lib/types/index.d.ts",
   "engines": {
@@ -67,7 +68,10 @@
     "prepack": "pnpm run build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check": "pnpm run typecheck && pnpm run test && pnpm run build"
+    "scripts:check": "node --check scripts/bump-version.mjs && node --check scripts/release-notes.mjs && sh -n install.sh",
+    "check": "pnpm run typecheck && pnpm run test && pnpm run build && pnpm run scripts:check",
+    "version:bump": "node scripts/bump-version.mjs",
+    "release:notes": "node scripts/release-notes.mjs"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "*",
@@ -110,17 +114,19 @@
     }
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "link:../../deepseek-harness/vendor/cordis",
-    "@deepseek-ai/dsh-client-locale": "link:../../deepseek-harness/packages/client/locale",
-    "@deepseek-ai/dsh-client-runtime": "link:../../deepseek-harness/packages/client/runtime",
-    "@deepseek-ai/dsh-client-ui-settings": "link:../../deepseek-harness/packages/client/ui-settings",
-    "@deepseek-ai/dsh-client-ui-slots": "link:../../deepseek-harness/packages/client/ui-slots",
-    "@deepseek-ai/dsh-invariants": "link:../../deepseek-harness/packages/runtime-diagnostics/invariants",
-    "@deepseek-ai/dsh-session": "link:../../deepseek-harness/packages/core/session",
-    "@deepseek-ai/dsh-session-projection": "link:../../deepseek-harness/packages/session/session-projection",
-    "@deepseek-ai/dsh-llm": "link:../../deepseek-harness/packages/llm/llm",
-    "@deepseek-ai/dsh-typert-registry": "link:../../deepseek-harness/packages/typert/registry",
-    "@deepseek-ai/schemastery": "link:../../deepseek-harness/vendor/schemastery",
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-client-locale": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-client-runtime": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-client-ui-settings": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-client-ui-slots": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-invariants": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-llm": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-scope": "0.1.0-rc.7",
+    "@deepseek-ai/dsh-session": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-session-projection": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-timeout": "0.1.0-rc.7",
+    "@deepseek-ai/dsh-typert-registry": "^0.1.0-rc.7",
+    "@deepseek-ai/schemastery": "^3.18.1",
     "@types/node": "^24.0.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
@@ -128,6 +134,7 @@
     "jsdom": "29.1.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "semver": "^7.7.4",
     "typescript": "^6.0.3",
     "vitest": "^4.1.8"
   },

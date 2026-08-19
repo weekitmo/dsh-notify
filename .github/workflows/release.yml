@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Verify and publish ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Verify tag and package version
+        run: node -e "if ('v' + require('./package.json').version !== process.env.GITHUB_REF_NAME) process.exit(1)"
+      - name: Verify release
+        run: |
+          pnpm run check
+          git diff --exit-code -- lib
+      - name: Build release tarball
+        run: pnpm pack --pack-destination dist
+      - name: Generate release log
+        run: pnpm run release:notes --version "${GITHUB_REF_NAME#v}" --output release-notes.md
+      - name: Create or update GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TITLE="$GITHUB_REF_NAME — desktop, Tab & sidebar task notifications"
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release edit "$GITHUB_REF_NAME" --title "$TITLE" --notes-file release-notes.md
+            gh release upload "$GITHUB_REF_NAME" dist/*.tgz install.sh --clobber
+          elif [[ "$GITHUB_REF_NAME" == *-* ]]; then
+            gh release create "$GITHUB_REF_NAME" dist/*.tgz install.sh --verify-tag --prerelease --title "$TITLE" --notes-file release-notes.md
+          else
+            gh release create "$GITHUB_REF_NAME" dist/*.tgz install.sh --verify-tag --title "$TITLE" --notes-file release-notes.md
+          fi
