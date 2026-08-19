@@ -18,6 +18,10 @@ export declare const zh: {
     'settings.titleSurface.title': string;
     'settings.titleSurface.enabled': string;
     'settings.titleSurface.running': string;
+    'settings.titleSurface.idleAnimation': string;
+    'settings.titleSurface.idleAnimationDesc': string;
+    'settings.titleSurface.idleFavicon': string;
+    'settings.titleSurface.idleFaviconDesc': string;
     'settings.titleSurface.animation': string;
     'settings.titleSurface.marquee': string;
     'settings.titleSurface.blink': string;
@@ -66,6 +70,10 @@ export declare const en: {
     'settings.titleSurface.title': string;
     'settings.titleSurface.enabled': string;
     'settings.titleSurface.running': string;
+    'settings.titleSurface.idleAnimation': string;
+    'settings.titleSurface.idleAnimationDesc': string;
+    'settings.titleSurface.idleFavicon': string;
+    'settings.titleSurface.idleFaviconDesc': string;
     'settings.titleSurface.animation': string;
     'settings.titleSurface.marquee': string;
     'settings.titleSurface.blink': string;

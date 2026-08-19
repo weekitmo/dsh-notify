@@ -11,6 +11,8 @@ export interface NotificationSettings {
     readonly systemNotifications: boolean;
     readonly titleNotifications: boolean;
     readonly runningTitleIndicator: boolean;
+    readonly idleTitleAnimation: boolean;
+    readonly idleFaviconIndicator: boolean;
     readonly sidebarIndicators: boolean;
     readonly titleAnimation: TitleAnimation;
     readonly backgroundOnly: boolean;

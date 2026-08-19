@@ -88,6 +88,8 @@ export function NotifySettingsSection({ useSettings, set, requestPermission, sen
         <h3>{t('settings.titleSurface.title')}</h3>
         <Toggle checked={settings.titleNotifications} label={t('settings.titleSurface.enabled')} onChange={checked => { change('titleNotifications', checked) }} />
         <Toggle checked={settings.runningTitleIndicator} label={t('settings.titleSurface.running')} onChange={checked => { change('runningTitleIndicator', checked) }} />
+        <Toggle checked={settings.idleTitleAnimation} label={t('settings.titleSurface.idleAnimation')} desc={t('settings.titleSurface.idleAnimationDesc')} onChange={checked => { change('idleTitleAnimation', checked) }} />
+        <Toggle checked={settings.idleFaviconIndicator} label={t('settings.titleSurface.idleFavicon')} desc={t('settings.titleSurface.idleFaviconDesc')} onChange={checked => { change('idleFaviconIndicator', checked) }} />
         <div className="dsh_notify_segment" role="group" aria-label={t('settings.titleSurface.animation')}>
           <button type="button" aria-pressed={settings.titleAnimation === 'marquee'} onClick={() => { set({ titleAnimation: 'marquee' }) }}>{t('settings.titleSurface.marquee')}</button>
           <button type="button" aria-pressed={settings.titleAnimation === 'blink'} onClick={() => { set({ titleAnimation: 'blink' }) }}>{t('settings.titleSurface.blink')}</button>

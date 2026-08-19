@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { AttentionEntry } from '../src/contract.ts'
-import { aggregatedTitle, productTitleOf, shellTitleOf, TitleNotifier } from '../src/client/title.ts'
+import { aggregatedTitle, productTitleOf, recentWorkspaceSessionTitle, shellTitleOf, TitleNotifier } from '../src/client/title.ts'
 
 function entry(sessionId: string, reason: AttentionEntry['reason'], createdAt: number): AttentionEntry {
   return { sessionId, turn: 1, reason, tone: reason === 'completed' ? 'success' : 'error', title: sessionId, body: '', createdAt }
@@ -18,7 +18,42 @@ describe('aggregatedTitle', () => {
   })
 })
 
+describe('recentWorkspaceSessionTitle', () => {
+  it('selects the most recently updated durable workspace session', () => {
+    const byId = {
+      older: { displayTitle: 'Older', title: ' Older title ', cwd: '/project', blank: false, updatedAt: 10 },
+      newer: { displayTitle: 'Newer fallback', cwd: '/project', blank: false, updatedAt: 20 },
+      loose: { displayTitle: 'Loose', blank: false, updatedAt: 40 },
+      blank: { displayTitle: 'Blank', cwd: '/project', blank: true, updatedAt: 50 },
+      child: { displayTitle: 'Child', cwd: '/project', origin: 'subagent' as const, blank: false, updatedAt: 60 },
+    }
+    expect(recentWorkspaceSessionTitle(Object.keys(byId), byId)).toBe('Newer fallback')
+    expect(recentWorkspaceSessionTitle(['loose', 'blank', 'child'], byId)).toBeUndefined()
+  })
+})
+
 describe('TitleNotifier', () => {
+  it('renders a stable workspace title without scheduling animation', () => {
+    const target = { title: 'DeepSeek Harness' }
+    let scheduled = false
+    const notifier = new TitleNotifier(target, () => { scheduled = true; return 1 }, () => {})
+    notifier.render('Recent workspace — DeepSeek Harness', 'marquee', false, false)
+    expect(target.title).toBe('Recent workspace — DeepSeek Harness')
+    expect(scheduled).toBe(false)
+    notifier.dispose('Selected session — DeepSeek Harness')
+    expect(target.title).toBe('Selected session — DeepSeek Harness')
+  })
+
+  it('cancels idle animation when returning to a static title', () => {
+    const target = { title: 'DeepSeek Harness' }
+    let cancelled: number | undefined
+    const notifier = new TitleNotifier(target, () => 11, id => { cancelled = id })
+    notifier.render('Recent workspace — DeepSeek Harness', 'marquee', false, true, 'DeepSeek Harness')
+    notifier.render('', 'marquee', false, false, 'Recent workspace — DeepSeek Harness')
+    expect(cancelled).toBe(11)
+    expect(target.title).toBe('Recent workspace — DeepSeek Harness')
+  })
+
   it('animates a unicode spinner and restores the original title', () => {
     const target = { title: 'DeepSeek Harness' }
     let callback: (() => void) | undefined

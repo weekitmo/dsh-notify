@@ -2,6 +2,29 @@ import type { AttentionEntry, NotificationReason, TitleAnimation } from '../cont
 
 export type ReasonLabel = (reason: NotificationReason, count: number) => string
 
+export interface WorkspaceSessionTitleSummary {
+  readonly displayTitle: string
+  readonly title?: string
+  readonly cwd?: string
+  readonly origin?: 'subagent'
+  readonly blank: boolean
+  readonly updatedAt: number
+}
+
+export function recentWorkspaceSessionTitle(
+  ids: readonly string[],
+  byId: Readonly<Record<string, WorkspaceSessionTitleSummary | undefined>>,
+): string | undefined {
+  let recent: WorkspaceSessionTitleSummary | undefined
+  for (const id of ids) {
+    const summary = byId[id]
+    if (summary === undefined || summary.cwd === undefined || summary.origin === 'subagent' || summary.blank) continue
+    if (recent === undefined || summary.updatedAt > recent.updatedAt) recent = summary
+  }
+  const value = recent?.title?.trim() || recent?.displayTitle.trim()
+  return value === '' ? undefined : value
+}
+
 const REASON_ORDER: readonly NotificationReason[] = ['completed', 'error', 'aborted', 'blocked', 'max-tokens']
 const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'] as const
 
@@ -70,12 +93,14 @@ export class TitleNotifier {
       return
     }
     this.tick()
-    this.timer = this.schedule(() => { this.tick() }, spinning ? 180 : mode === 'marquee' ? 300 : 900)
+    if (spinning || animateText) {
+      this.timer = this.schedule(() => { this.tick() }, spinning ? 180 : mode === 'marquee' ? 300 : 900)
+    }
   }
 
-  dispose(): void {
+  dispose(restoreTitle = this.baseTitle): void {
     this.stopTimer()
-    this.write(this.baseTitle)
+    this.write(restoreTitle)
   }
 
   private write(value: string): void {

@@ -3,6 +3,7 @@ import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 import type { AttentionEntry, NotificationReason, NotificationSettings } from '../contract.ts'
 import { asReason, reasonEnabled, toneOf } from './decision.ts'
+import { FaviconNotifier } from './favicon.ts'
 import { NotifySettingsSection, type SettingsInjected } from './SettingsSection.tsx'
 import { en, NS, zh, type NotifyKey } from './locales.ts'
 import { createNotification, notificationBody, NotificationRegistry, notificationsApi, notificationTitleKey, shouldShowSystem } from './notifier.ts'
@@ -12,7 +13,7 @@ import { SettingsNavBell } from './settings-nav.ts'
 import { attentionEntries, createAttentionStore, createNotificationSettingsStore } from './store.ts'
 import { runningConversationCount } from './state.ts'
 import { adoptStyles } from './styles.ts'
-import { aggregatedTitle, productTitleOf, shellTitleOf, TitleNotifier } from './title.ts'
+import { aggregatedTitle, productTitleOf, recentWorkspaceSessionTitle, shellTitleOf, TitleNotifier } from './title.ts'
 
 export const inject = ['sessions', 'slots', 'locale']
 
@@ -44,6 +45,7 @@ export function apply(ctx: ClientContext): void {
   const initialSessionTitle = initialList.current === undefined ? undefined : initialList.byId[initialList.current]?.title
   const productTitle = productTitleOf(document.title, initialSessionTitle)
   const title = new TitleNotifier()
+  const favicon = new FaviconNotifier()
   const notifications = new NotificationRegistry()
   const sidebar = new SidebarIndicators()
   const settingsNavBell = new SettingsNavBell(document, () => t('nav'))
@@ -91,19 +93,24 @@ export function apply(ctx: ClientContext): void {
     const current = settings.getSnapshot()
     const state = sessions.list.getSnapshot()
     const entries = visibleEntries()
-    const runningCount = current.enabled && current.runningTitleIndicator
-      ? runningConversationCount(state.ids, state.byId)
-      : 0
+    const runningCount = current.enabled ? runningConversationCount(state.ids, state.byId) : 0
+    const titleRunningCount = current.runningTitleIndicator ? runningCount : 0
     const titleEntries = current.titleNotifications ? entries : []
     const titleText = aggregatedTitle(
       titleEntries,
       (reason, count) => t(titleKey(reason), { n: count }),
-      runningCount,
+      titleRunningCount,
       count => t('title.running', { n: count }),
     )
     const currentSessionTitle = state.current === undefined ? undefined : state.byId[state.current]?.title
     const shellTitle = shellTitleOf(productTitle, currentSessionTitle)
-    title.render(titleText, current.titleAnimation, runningCount > 0, titleEntries.length > 0, shellTitle)
+    const idle = current.enabled && runningCount === 0 && entries.length === 0
+    const recentTitle = recentWorkspaceSessionTitle(state.ids, state.byId)
+    const idleShellTitle = shellTitleOf(productTitle, recentTitle)
+    const animateIdle = idle && document.hidden && current.idleTitleAnimation && recentTitle !== undefined
+    if (animateIdle) title.render(idleShellTitle, current.titleAnimation, false, true, productTitle)
+    else title.render(titleText, current.titleAnimation, titleRunningCount > 0, titleEntries.length > 0, idle ? idleShellTitle : shellTitle)
+    favicon.render(idle && document.hidden && current.idleFaviconIndicator)
     const sidebarEnabled = current.enabled && current.sidebarIndicators
     document.documentElement.setAttribute('data-dsh-notify-sidebar', sidebarEnabled ? 'on' : 'off')
     sidebar.render(entries, sidebarEnabled)
@@ -178,7 +185,10 @@ export function apply(ctx: ClientContext): void {
       notifications.closeAll()
       sidebar.dispose()
       settingsNavBell.dispose()
-      title.dispose()
+      favicon.dispose()
+      const state = sessions.list.getSnapshot()
+      const currentSessionTitle = state.current === undefined ? undefined : state.byId[state.current]?.title
+      title.dispose(shellTitleOf(productTitle, currentSessionTitle))
       document.documentElement.removeAttribute('data-dsh-notify-sidebar')
     }
   }, 'dsh-notify: surfaces')

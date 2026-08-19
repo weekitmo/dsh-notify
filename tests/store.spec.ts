@@ -13,6 +13,8 @@ describe('notification state', () => {
       systemNotifications: true,
       titleNotifications: true,
       runningTitleIndicator: true,
+      idleTitleAnimation: true,
+      idleFaviconIndicator: false,
       sidebarIndicators: true,
       titleAnimation: 'marquee',
       backgroundOnly: false,
@@ -29,6 +31,8 @@ describe('notification state', () => {
     expect(normalized.enabled).toBe(false)
     expect(normalized.notifyError).toBe(false)
     expect(normalized.runningTitleIndicator).toBe(true)
+    expect(normalized.idleTitleAnimation).toBe(true)
+    expect(normalized.idleFaviconIndicator).toBe(false)
     expect(normalized.notifyBlocked).toBe(true)
     expect(normalizeNotificationSettings('{bad' as unknown)).toEqual(defaultNotificationSettings())
   })
