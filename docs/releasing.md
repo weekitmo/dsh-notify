@@ -36,6 +36,6 @@ pnpm version:bump prepatch --preid rc --tag --push
 
 也可以传入明确版本，例如 `pnpm version:bump 1.0.0 --tag --push`。
 
-脚本会同步更新 [安装说明](installation.md) 中的固定 tag 和 `.tgz` 链接，并拒绝脏工作树、非法 SemVer 和重复 tag。tag push 后，`.github/workflows/release.yml` 会再次验证版本、执行 `pnpm run check`、确认 `lib/` 无差异、生成中文结构的 release log，并上传预构建 `.tgz`、`install.sh` 与 `SHA256SUMS`。
+脚本会同步更新 [安装说明](installation.md) 中的固定 tag 和 `.tgz` 链接，并拒绝脏工作树、非法 SemVer 和重复 tag。tag push 后，`.github/workflows/release.yml` 会再次验证版本、执行 `pnpm run check`、确认 `lib/` 无差异、生成中文结构的 release log，并上传预构建 `.tgz`、`install.sh`、`install.bat` 与 `SHA256SUMS`。
 
 返回 [README](../README.md)。

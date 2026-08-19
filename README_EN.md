@@ -16,21 +16,29 @@ A task status notification plugin for DeepSeek Harness. It provides clear status
 
 ## Installation
 
-Prerequisites: `dsh` is installed and `pnpm` is available in `PATH`.
+Prerequisite: `pnpm` is available in `PATH`. If `dsh` is missing, the installer prompts to install it with `bun` when available, then falls back to `npm`; installation runs only after entering a lowercase `y`.
 
 ### Install the Latest Stable Release
 
-Using curl:
+On macOS, Linux, or another POSIX shell, use curl:
 
 ```sh
 curl -fsSL https://github.com/weekitmo/dsh-notify/releases/latest/download/install.sh | sh
 ```
 
-Or using wget:
+Or use wget:
 
 ```sh
 wget -qO- https://github.com/weekitmo/dsh-notify/releases/latest/download/install.sh | sh
 ```
+
+From Windows CMD, use the native batch installer:
+
+```bat
+curl.exe -fsSLO https://github.com/weekitmo/dsh-notify/releases/latest/download/install.bat && install.bat
+```
+
+`install.sh` does not run natively in CMD or PowerShell. On Windows, use `install.bat`, or run the shell installer from Git Bash or WSL.
 
 Refresh the WebUI after installation. If the plugin does not load automatically, restart the corresponding `dsh web` process and refresh the page again.
 

@@ -13,7 +13,29 @@ fail() {
   exit 1
 }
 
-command -v dsh >/dev/null 2>&1 || fail 'dsh is required; install DeepSeek Harness first.'
+install_dsh() {
+  if command -v bun >/dev/null 2>&1; then
+    INSTALL_COMMAND='bun add --global @deepseek-ai/dsh'
+  elif command -v npm >/dev/null 2>&1; then
+    INSTALL_COMMAND='npm install --global @deepseek-ai/dsh'
+  else
+    fail 'dsh is required; install DeepSeek Harness first.'
+  fi
+
+  if ! { exec 3<>/dev/tty; } 2>/dev/null; then
+    fail 'dsh is required; install DeepSeek Harness first.'
+  fi
+  printf 'dsh is not installed. Install it now with `%s`? [y/N] ' "$INSTALL_COMMAND" >&3
+  if ! IFS= read -r REPLY <&3 || [ "$REPLY" != y ]; then
+    fail 'dsh is required; install DeepSeek Harness first.'
+  fi
+  exec 3>&-
+
+  $INSTALL_COMMAND
+  command -v dsh >/dev/null 2>&1 || fail 'dsh was installed but is not available in PATH. Open a new shell and try again.'
+}
+
+command -v dsh >/dev/null 2>&1 || install_dsh
 command -v pnpm >/dev/null 2>&1 || fail 'pnpm is required because dsh plugin delegates installation to pnpm.'
 
 resolve_latest() {

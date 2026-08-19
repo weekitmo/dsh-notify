@@ -20,17 +20,31 @@ dsh plugin --profile web add https://github.com/weekitmo/dsh-notify/releases/dow
 
 ## SHA256SUMS
 
-Release 同时发布 `SHA256SUMS`。安全或可复现安装建议先固定版本，下载并校验资产，再安装本地包：
+Release 同时发布 `install.sh`、`install.bat` 和 `SHA256SUMS`。`install.sh` 面向 POSIX shell，`install.bat` 面向 Windows CMD；两者都支持通过 `DSH_NOTIFY_VERSION` 和 `DSH_NOTIFY_PROFILE` 固定版本与 profile。安全或可复现安装建议先固定版本，下载并校验资产，再安装本地包：
 
 ```sh
 mkdir dsh-notify-v0.1.4 && cd dsh-notify-v0.1.4
 curl -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.1.4/install.sh
+curl -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.1.4/install.bat
 curl -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.1.4/dsh-notify-0.1.4.tgz
 curl -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.1.4/SHA256SUMS
 sha256sum -c SHA256SUMS        # Linux
 # shasum -a 256 -c SHA256SUMS # macOS
 dsh plugin --profile web add "$PWD/dsh-notify-0.1.4.tgz"
 ```
+
+Windows CMD 可下载批处理安装器并用系统自带的 `certutil` 核对 `SHA256SUMS` 中对应的哈希：
+
+```bat
+mkdir dsh-notify-v0.1.4 && cd dsh-notify-v0.1.4
+curl.exe -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.1.4/install.bat
+curl.exe -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.1.4/SHA256SUMS
+certutil -hashfile install.bat SHA256
+set DSH_NOTIFY_VERSION=v0.1.4
+install.bat
+```
+
+将 `certutil` 输出的哈希与 `SHA256SUMS` 中 `install.bat` 对应行比较后再执行。
 
 ## 从源码安装
 

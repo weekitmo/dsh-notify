@@ -77,7 +77,7 @@ notes.push(
   '',
   '- ' + code + 'pnpm run check' + code + '（类型检查、测试和构建）由 GitHub Actions 在发布前执行。',
   '- 发布包包含已构建的 ' + code + 'lib/' + code + '；DSH 安装时不会自动执行插件的 build。',
-  '- Release 同时发布 ' + code + 'SHA256SUMS' + code + '，用于校验预构建包与安装脚本。',
+  '- Release 同时发布 POSIX ' + code + 'install.sh' + code + '、Windows ' + code + 'install.bat' + code + ' 与 ' + code + 'SHA256SUMS' + code + '。',
   '',
   '## 安装',
   '',

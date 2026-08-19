@@ -44,9 +44,9 @@ jobs:
       - name: Build release artifacts
         run: |
           pnpm pack --pack-destination dist
-          cp install.sh dist/install.sh
+          cp install.sh install.bat dist/
           pnpm run release:notes --version "${GITHUB_REF_NAME#v}" --output dist/release-notes.md
-          (cd dist && sha256sum *.tgz install.sh > SHA256SUMS)
+          (cd dist && sha256sum *.tgz install.sh install.bat > SHA256SUMS)
       - name: Upload verified release artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -74,9 +74,9 @@ jobs:
           REPO="$GITHUB_REPOSITORY"
           if gh release view "$GITHUB_REF_NAME" --repo "$REPO" >/dev/null 2>&1; then
             gh release edit "$GITHUB_REF_NAME" --repo "$REPO" --title "$TITLE" --notes-file release-notes.md
-            gh release upload "$GITHUB_REF_NAME" --repo "$REPO" ./*.tgz install.sh SHA256SUMS --clobber
+            gh release upload "$GITHUB_REF_NAME" --repo "$REPO" ./*.tgz install.sh install.bat SHA256SUMS --clobber
           elif [[ "$GITHUB_REF_NAME" == *-* ]]; then
-            gh release create "$GITHUB_REF_NAME" --repo "$REPO" ./*.tgz install.sh SHA256SUMS --verify-tag --prerelease --title "$TITLE" --notes-file release-notes.md
+            gh release create "$GITHUB_REF_NAME" --repo "$REPO" ./*.tgz install.sh install.bat SHA256SUMS --verify-tag --prerelease --title "$TITLE" --notes-file release-notes.md
           else
-            gh release create "$GITHUB_REF_NAME" --repo "$REPO" ./*.tgz install.sh SHA256SUMS --verify-tag --title "$TITLE" --notes-file release-notes.md
+            gh release create "$GITHUB_REF_NAME" --repo "$REPO" ./*.tgz install.sh install.bat SHA256SUMS --verify-tag --title "$TITLE" --notes-file release-notes.md
           fi
