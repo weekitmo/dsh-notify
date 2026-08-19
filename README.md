@@ -37,14 +37,14 @@ dsh plugin --profile web add "file:$PWD"
 
 ### GitHub Release 安装
 
-配置 Git remote、推送 `main` 并创建 `v0.1.0` tag 后，使用已构建的 release archive 安装：
+创建 `v0.1.0` tag 后，使用已构建的 GitHub release archive 安装：
 
 ```sh
 dsh plugin --profile web add \
-  "https://github.com/<owner>/dsh-notify/archive/refs/tags/v0.1.0.tar.gz"
+  "https://github.com/weekitmo/dsh-notify/archive/refs/tags/v0.1.0.tar.gz"
 ```
 
-将 `<owner>` 替换为实际 GitHub owner。当前仓库尚未配置 remote，因此该远程命令需要在发布后使用。
+发布 tag 前，可使用本地安装方式。
 
 ## 卸载
 

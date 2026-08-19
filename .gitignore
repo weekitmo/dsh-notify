@@ -1,4 +1,10 @@
 node_modules/
 coverage/
 *.log
+.pnpm-debug.log*
+*.tgz
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
 .DS_Store
