@@ -8,6 +8,7 @@ import { en, NS, zh, type NotifyKey } from './locales.ts'
 import { createNotification, notificationBody, NotificationRegistry, notificationsApi, notificationTitleKey, shouldShowSystem } from './notifier.ts'
 import { projectionAdvance } from './runner.ts'
 import { SidebarIndicators } from './sidebar.ts'
+import { SettingsNavBell } from './settings-nav.ts'
 import { attentionEntries, createAttentionStore, createNotificationSettingsStore } from './store.ts'
 import { runningConversationCount } from './state.ts'
 import { adoptStyles } from './styles.ts'
@@ -45,7 +46,9 @@ export function apply(ctx: ClientContext): void {
   const title = new TitleNotifier()
   const notifications = new NotificationRegistry()
   const sidebar = new SidebarIndicators()
+  const settingsNavBell = new SettingsNavBell(document, () => t('nav'))
   sidebar.start()
+  settingsNavBell.start()
 
   const set = (patch: Partial<NotificationSettings>): void => {
     settings.update(draft => { Object.assign(draft, patch) })
@@ -174,6 +177,7 @@ export function apply(ctx: ClientContext): void {
       stopSettings()
       notifications.closeAll()
       sidebar.dispose()
+      settingsNavBell.dispose()
       title.dispose()
       document.documentElement.removeAttribute('data-dsh-notify-sidebar')
     }

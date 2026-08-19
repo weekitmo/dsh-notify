@@ -19,6 +19,8 @@ export const cssText = `
 .dsh_notify_segment { display:inline-flex; align-self:flex-start; gap:4px; }
 .dsh_notify_segment button[aria-pressed='true'] { border-color:var(--dsw-alias-brand-primary); background:var(--dsw-alias-interactive-bg-hover); }
 .dsh_notify_outcomes { display:flex; flex-wrap:wrap; gap:10px 22px; }
+[data-dsh-notify-nav-bell-host] > svg:not([data-dsh-notify-nav-bell]) { display:none; }
+[data-dsh-notify-nav-bell] { width:16px; height:16px; flex:none; }
 .dsh_notify_indicatorHost { display:inline-flex !important; align-items:center; justify-content:center; flex:none; width:16px; height:20px; }
 .dsh_notify_indicatorHost > [data-state] { display:none !important; }
 [data-dsh-notify-indicator] { position:relative; display:inline-block; width:10px; height:10px; color:var(--dsw-alias-state-success-primary); }
