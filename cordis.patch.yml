@@ -1,0 +1,4 @@
+# Mount dsh-notify from the profile's resolved node_modules.
+- insert:
+    - id: dsh-notify
+      name: dsh-notify

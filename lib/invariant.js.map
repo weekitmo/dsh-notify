@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../src/invariant.ts"],
+  "sourcesContent": ["import type { Context } from '@deepseek-ai/cordis'\nimport type { InvariantInstaller } from '@deepseek-ai/dsh-invariants'\n\nconst PACKAGE_NAME = 'dsh-notify'\nexport const name = 'dsh-notify-invariant'\nexport const inject = ['invariants']\n\nconst install: InvariantInstaller = () => {}\n\nexport const apply = (ctx: Context): Promise<() => void> =>\n  Promise.resolve(ctx.invariants.register(PACKAGE_NAME, install))\n"],
+  "mappings": ";AAGA,IAAM,eAAe;AACd,IAAM,OAAO;AACb,IAAM,SAAS,CAAC,YAAY;AAEnC,IAAM,UAA8B,MAAM;AAAC;AAEpC,IAAM,QAAQ,CAAC,QACpB,QAAQ,QAAQ,IAAI,WAAW,SAAS,cAAc,OAAO,CAAC;",
+  "names": []
+}

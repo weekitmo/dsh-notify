@@ -1,0 +1,65 @@
+import { describe, expect, it } from 'vitest'
+import type { AttentionEntry } from '../src/contract.ts'
+import { attentionEntries, clearAttention, defaultNotificationSettings, filterAttentionBySettings, normalizeNotificationSettings, putAttention, retainAttention, runningConversationCount, type AttentionState } from '../src/client/state.ts'
+
+function entry(sessionId: string, createdAt: number): AttentionEntry {
+  return { sessionId, turn: 1, reason: 'completed', tone: 'success', title: sessionId, body: '', createdAt }
+}
+
+describe('notification state', () => {
+  it('enables all requested surfaces and outcomes by default', () => {
+    expect(defaultNotificationSettings()).toEqual({
+      enabled: true,
+      systemNotifications: true,
+      titleNotifications: true,
+      runningTitleIndicator: true,
+      sidebarIndicators: true,
+      titleAnimation: 'marquee',
+      backgroundOnly: false,
+      notifyCompleted: true,
+      notifyError: true,
+      notifyAborted: true,
+      notifyBlocked: true,
+      notifyMaxTokens: true,
+    })
+  })
+
+  it('fills missing persisted settings fields from current defaults', () => {
+    const normalized = normalizeNotificationSettings({ enabled: false, notifyError: false })
+    expect(normalized.enabled).toBe(false)
+    expect(normalized.notifyError).toBe(false)
+    expect(normalized.runningTitleIndicator).toBe(true)
+    expect(normalized.notifyBlocked).toBe(true)
+    expect(normalizeNotificationSettings('{bad' as unknown)).toEqual(defaultNotificationSettings())
+  })
+
+  it('clears unread results when the master or outcome switch disables them', () => {
+    const state: AttentionState = { bySession: { a: entry('a', 1), b: { ...entry('b', 2), reason: 'error', tone: 'error' } } }
+    expect(Object.keys(filterAttentionBySettings(state, { ...defaultNotificationSettings(), enabled: false }).bySession)).toHaveLength(0)
+    expect(Object.keys(filterAttentionBySettings(state, { ...defaultNotificationSettings(), notifyCompleted: false }).bySession)).toEqual(['b'])
+  })
+
+  it('keeps one unread result per session and clears viewed or removed sessions', () => {
+    let state: AttentionState = { bySession: {} }
+    state = putAttention(state, entry('later', 20))
+    state = putAttention(state, entry('earlier', 10))
+    state = putAttention(state, { ...entry('later', 30), reason: 'error', tone: 'error' })
+    expect(attentionEntries(state).map(item => [item.sessionId, item.reason]))
+      .toEqual([['earlier', 'completed'], ['later', 'error']])
+    state = clearAttention(state, 'earlier')
+    state = retainAttention(state, new Set(['later']))
+    expect(Object.keys(state.bySession)).toEqual(['later'])
+    state = retainAttention(state, new Set())
+    expect(state.bySession).toEqual({})
+  })
+
+  it('folds running subagents into their visible parent session', () => {
+    const byId = {
+      parent: { id: 'parent', running: true },
+      child: { id: 'child', parentId: 'parent', origin: 'subagent' as const, running: true },
+      background: { id: 'background', parentId: 'idle-parent', origin: 'subagent' as const, running: true },
+      'idle-parent': { id: 'idle-parent', running: false },
+    }
+    expect(runningConversationCount(Object.keys(byId), byId)).toBe(2)
+  })
+})
