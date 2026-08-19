@@ -1,5 +1,7 @@
 import type { AttentionEntry, NotificationReason, NotificationSettings } from '../contract.ts';
 export declare function notificationsApi(): typeof Notification | undefined;
+/** Create a browser notification without allowing browser/OS failures to break the client fiber. */
+export declare function createNotification(api: typeof Notification, title: string, options: NotificationOptions): Notification | undefined;
 export interface ManagedNotification {
     onclick: ((this: Notification, event: Event) => unknown) | null;
     onclose: ((this: Notification, event: Event) => unknown) | null;

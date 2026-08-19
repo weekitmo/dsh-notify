@@ -110,6 +110,8 @@
     "@deepseek-ai/dsh-invariants": "link:../../deepseek-harness/packages/runtime-diagnostics/invariants",
     "@deepseek-ai/dsh-session": "link:../../deepseek-harness/packages/core/session",
     "@deepseek-ai/dsh-session-projection": "link:../../deepseek-harness/packages/session/session-projection",
+    "@deepseek-ai/dsh-llm": "link:../../deepseek-harness/packages/llm/llm",
+    "@deepseek-ai/dsh-typert-registry": "link:../../deepseek-harness/packages/typert/registry",
     "@deepseek-ai/schemastery": "link:../../deepseek-harness/vendor/schemastery",
     "@types/node": "^24.0.0",
     "@types/react": "^18.2.0",

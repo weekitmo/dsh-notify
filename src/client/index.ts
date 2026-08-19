@@ -5,7 +5,7 @@ import type { AttentionEntry, NotificationReason, NotificationSettings } from '.
 import { asReason, reasonEnabled, toneOf } from './decision.ts'
 import { NotifySettingsSection, type SettingsInjected } from './SettingsSection.tsx'
 import { en, NS, zh, type NotifyKey } from './locales.ts'
-import { notificationBody, NotificationRegistry, notificationsApi, notificationTitleKey, shouldShowSystem } from './notifier.ts'
+import { createNotification, notificationBody, NotificationRegistry, notificationsApi, notificationTitleKey, shouldShowSystem } from './notifier.ts'
 import { projectionAdvance } from './runner.ts'
 import { SidebarIndicators } from './sidebar.ts'
 import { attentionEntries, createAttentionStore, createNotificationSettingsStore } from './store.ts'
@@ -56,10 +56,11 @@ export function apply(ctx: ClientContext): void {
   const show = (entry: AttentionEntry): void => {
     const api = notificationsApi()
     if (api === undefined) return
-    const notification = new api(t(notificationTitleKey(entry.reason)), {
+    const notification = createNotification(api, t(notificationTitleKey(entry.reason)), {
       body: notificationBody(entry, t('notify.bodyFallback')),
       tag: `dsh-notify-${entry.sessionId}-${String(entry.turn)}`,
     })
+    if (notification === undefined) return
     notifications.track(notification)
     notification.onclick = () => {
       window.focus()
@@ -71,11 +72,11 @@ export function apply(ctx: ClientContext): void {
   const sendTest = (): void => {
     const api = notificationsApi()
     if (api === undefined || api.permission !== 'granted') return
-    const notification = new api(t('notify.testTitle'), {
+    const notification = createNotification(api, t('notify.testTitle'), {
       body: t('notify.testBody'),
       tag: `dsh-notify-test-${String(Date.now())}`,
     })
-    notifications.track(notification)
+    if (notification !== undefined) notifications.track(notification)
   }
 
   const visibleEntries = (): AttentionEntry[] => {

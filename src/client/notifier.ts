@@ -4,6 +4,20 @@ export function notificationsApi(): typeof Notification | undefined {
   return typeof Notification === 'undefined' ? undefined : Notification
 }
 
+/** Create a browser notification without allowing browser/OS failures to break the client fiber. */
+export function createNotification(
+  api: typeof Notification,
+  title: string,
+  options: NotificationOptions,
+): Notification | undefined {
+  try {
+    return new api(title, options)
+  } catch (error) {
+    console.warn('[dsh-notify] browser notification could not be created', error)
+    return undefined
+  }
+}
+
 
 export interface ManagedNotification {
   onclick: ((this: Notification, event: Event) => unknown) | null

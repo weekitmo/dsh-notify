@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vitest'
-import { notificationBody, NotificationRegistry, notificationTitleKey, shouldShowSystem } from '../src/client/notifier.ts'
+import { describe, expect, it, vi } from 'vitest'
+import { createNotification, notificationBody, NotificationRegistry, notificationTitleKey, shouldShowSystem } from '../src/client/notifier.ts'
 import { defaultNotificationSettings } from '../src/client/state.ts'
 
 describe('system notification helpers', () => {
@@ -10,6 +10,15 @@ describe('system notification helpers', () => {
     expect(notificationTitleKey('aborted')).toBe('notify.aborted')
     expect(notificationTitleKey('blocked')).toBe('notify.blocked')
     expect(notificationTitleKey('max-tokens')).toBe('notify.maxTokens')
+  })
+
+  it('contains browser notification construction failures', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const BrokenNotification = class {
+      constructor() { throw new Error('blocked by platform') }
+    }
+    expect(createNotification(BrokenNotification as never, 'Title', {})).toBeUndefined()
+    expect(warn).toHaveBeenCalledWith('[dsh-notify] browser notification could not be created', expect.any(Error))
   })
 
   it('requires permission and honors the background-only setting', () => {
