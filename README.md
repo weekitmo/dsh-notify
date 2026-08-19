@@ -47,36 +47,36 @@ wget -qO- https://github.com/weekitmo/dsh-notify/releases/latest/download/instal
 
 ### 固定版本安装（推荐用于可复现部署）
 
-当前版本：`v0.1.1`。
+当前版本：`v0.1.2`。
 
 ```sh
 dsh plugin --profile web add \
-  git+https://github.com/weekitmo/dsh-notify.git#v0.1.1
+  git+https://github.com/weekitmo/dsh-notify.git#v0.1.2
 ```
 
 也可以安装 Release 中由 CI 产出的预构建包，不需要 git checkout：
 
 ```sh
 dsh plugin --profile web add \
-  https://github.com/weekitmo/dsh-notify/releases/download/v0.1.1/dsh-notify-0.1.1.tgz
+  https://github.com/weekitmo/dsh-notify/releases/download/v0.1.2/dsh-notify-0.1.2.tgz
 ```
 
 Release 同时发布 `SHA256SUMS`。安全或可复现安装建议先固定版本、下载并校验资产，再执行：
 
 ```sh
-mkdir dsh-notify-v0.1.1 && cd dsh-notify-v0.1.1
-curl -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.1.1/install.sh
-curl -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.1.1/dsh-notify-0.1.1.tgz
-curl -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.1.1/SHA256SUMS
+mkdir dsh-notify-v0.1.2 && cd dsh-notify-v0.1.2
+curl -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.1.2/install.sh
+curl -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.1.2/dsh-notify-0.1.2.tgz
+curl -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.1.2/SHA256SUMS
 sha256sum -c SHA256SUMS        # Linux
 # shasum -a 256 -c SHA256SUMS # macOS
-dsh plugin --profile web add "$PWD/dsh-notify-0.1.1.tgz"
+dsh plugin --profile web add "$PWD/dsh-notify-0.1.2.tgz"
 ```
 
 ### 从源码安装
 
 ```sh
-git clone --branch v0.1.1 --depth 1 https://github.com/weekitmo/dsh-notify.git
+git clone --branch v0.1.2 --depth 1 https://github.com/weekitmo/dsh-notify.git
 cd dsh-notify
 corepack enable
 pnpm install --frozen-lockfile
