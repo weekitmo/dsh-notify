@@ -67,13 +67,6 @@ const notes = [
   '',
   'DeepSeek Harness Web 的任务状态通知插件，提供系统通知、Tab 未读汇总和侧栏会话状态提示。',
   '',
-  '## 版本亮点',
-  '',
-  '- 系统通知覆盖完成、错误、中止、阻塞和 Token 限制，并支持按类型开关。',
-  '- 浏览器 Tab 显示运行中会话数量，并汇总未读完成或异常结果。',
-  '- 侧栏会话状态灯区分成功与异常，打开会话后自动清除。',
-  '- 设置页集中控制通知权限、动画、spinner、状态灯和结果类型。',
-  '',
 ]
 for (const [title, items] of groups) {
   if (items.length) notes.push('## ' + title, '', ...items, '')

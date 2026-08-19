@@ -41,6 +41,25 @@ if ! printf '%s\n' "$TAG" | grep -Eq '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-
   fail "invalid SemVer tag: $VERSION"
 fi
 
+CORE=${TAG#v}
+CORE=${CORE%%+*}
+case "$CORE" in
+  *-*)
+    PRERELEASE=${CORE#*-}
+    OLD_IFS=$IFS
+    IFS=.
+    set -- $PRERELEASE
+    IFS=$OLD_IFS
+    for IDENTIFIER do
+      if printf '%s\n' "$IDENTIFIER" | grep -Eq '^[0-9]+$'; then
+        case "$IDENTIFIER" in
+          0[0-9]*) fail "invalid numeric prerelease identifier: $IDENTIFIER" ;;
+        esac
+      fi
+    done
+    ;;
+esac
+
 SPEC="${REPOSITORY}#${TAG}"
 printf 'Installing dsh-notify %s into the %s profile...\n' "$TAG" "$PROFILE"
 dsh plugin --profile "$PROFILE" add "$SPEC"
