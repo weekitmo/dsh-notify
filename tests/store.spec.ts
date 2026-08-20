@@ -62,13 +62,14 @@ describe('notification state', () => {
     expect(state.bySession).toEqual({})
   })
 
-  it('folds running subagents into their visible parent session', () => {
+  it('folds running subagents into their visible parent for the title spinner count', () => {
     const byId = {
       parent: { id: 'parent', running: true },
       child: { id: 'child', parentId: 'parent', origin: 'subagent' as const, running: true },
       background: { id: 'background', parentId: 'idle-parent', origin: 'subagent' as const, running: true },
       'idle-parent': { id: 'idle-parent', running: false },
+      fork: { id: 'fork', parentId: 'parent', running: true },
     }
-    expect(runningConversationCount(Object.keys(byId), byId)).toBe(2)
+    expect(runningConversationCount(Object.keys(byId), byId)).toBe(3)
   })
 })

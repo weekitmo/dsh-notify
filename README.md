@@ -8,7 +8,7 @@ DeepSeek Harness 的任务状态通知插件。它在任务运行、完成或异
 
 ## 功能
 
-- **系统通知**：主 Agent（顶层会话）每轮的完成、错误、中止、阻塞、Token 限制均可通知；可在设置中单独关闭某一类。子代理不会单独通知。
+- **系统通知**：仅在顶层任务全部收敛后发送完成、错误、中止、阻塞或 Token 限制结果；可在设置中单独关闭某一类。
 - **钉钉机器人**：配置 Access Token 与 Signing Secret，独立选择“成功 / 完成”或“失败 / 中止”消息，并支持免打扰和结束后错过消息汇总。
 - **Tab 状态**：空闲时显示最近工作区会话标题；运行中显示 spinner 和会话数；完成或异常后显示未读结果计数。
 - **侧栏状态灯**：会话完成且尚未查看时显示绿色圆点；错误、中止、阻塞或 Token 限制显示红色圆点。打开会话后清除。
@@ -23,19 +23,22 @@ DeepSeek Harness 的任务状态通知插件。它在任务运行、完成或异
 flowchart TB
   subgraph Host[DSH Host / Cordis]
     Events[Session 事件日志] --> Projection[dshNotify Session Projection]
-    Events --> Listener[全局 session/event 监听]
-    Listener --> HostFilter{origin 是 subagent?}
-    HostFilter -->|是| IgnoreHost[忽略，不发送子代理通知]
-    HostFilter -->|否| DingQueue[钉钉持久队列]
+    Events --> Coordinator[任务完成协调器]
+    Agents[agents 状态] --> Coordinator
+    Jobs[jobs 状态] --> Coordinator
+    Coordinator --> HostFilter{任务已完全收敛?}
+    HostFilter -->|否| PendingHost[保留或取消候选]
+    HostFilter -->|是| DingQueue[钉钉持久队列]
     DingQueue --> DingTalk[钉钉机器人]
     SettingsApi[同源回环设置接口] --> DingQueue
   end
 
   subgraph Web[DSH Web Client]
     Projection --> SessionList[sessions.list 投影快照]
-    SessionList --> ClientFilter{origin 是 subagent?}
-    ClientFilter -->|是| IgnoreClient[忽略独立完成结果]
-    ClientFilter -->|否| Unread[每个顶层会话的未读状态]
+    SessionList --> ClientState[pending / published 状态机]
+    ClientState --> ClientFilter{任务已完全收敛?}
+    ClientFilter -->|否| PendingClient[保留或取消候选]
+    ClientFilter -->|是| Unread[最终 AttentionEntry]
     Unread --> System[浏览器系统通知]
     Unread --> Title[document.title 汇总]
     Unread --> Sidebar[侧栏状态灯]
@@ -49,11 +52,11 @@ flowchart TB
   end
 ```
 
-Host 入口通过 `ctx.sessionProjections.register(...)` 注册投影、通过 `ctx.on('session/event', ..., { global: true })` 监听结束事件，并用 `ctx.effect(...)` 管理路由和资源生命周期。Client 入口订阅 `sessions.list`，再通过 `ctx.slots.inject('settings.section', ...)` 注入设置页。
+Host 入口通过 `ctx.sessionProjections.register(...)` 注册投影，并由协调器同时监听 Session、Agent 与 Job 生命周期；Client 入口订阅 `sessions.list`，每次快照变化都重新评估候选。两端都用可取消的短收敛窗口处理 job settle 后同步 followup 唤醒主 Agent 的竞态。
 
-子代理 Session 带有 `origin: 'subagent'`。Host 的钉钉出口和浏览器端的系统通知、Tab 未读结果、侧栏状态灯都会在各自入口过滤它，因此当前没有“子代理成功通知”开关：其效果等同于固定关闭。运行中的子代理仅折叠进可见父会话的运行计数。
+子代理 Session 带有 `origin: 'subagent'`。Host 的钉钉出口和浏览器端的系统通知、Tab 未读结果、侧栏状态灯都会在候选进入最终结果前过滤它，因此当前没有“子代理成功通知”开关。运行中的子代理仍折叠进可见父会话的运行计数。
 
-通知描述的是主 Agent 某一轮的 `turn/end`，不是整个项目目标完成。如果主 Agent 本轮已经结束、但后台子代理仍在运行，仍可能看到主 Agent 本轮完成通知；这不是子代理完成触发。
+`turn/end` 只产生待定候选，不直接表示完成。只有顶层主会话已 idle、该任务及其子代理后代没有 running/stopping job、没有运行中的子代理后代、没有 active 自动 goal，并且该轮没有未收敛异步委派时，候选才在短收敛窗口后发布。`de_coi_dispatch`、后台 subagent/bash、workflow/goal 等仍有未收敛委派的启动轮不会发布；如果同一轮已明确等待并收集全部终态，则该轮仍可作为最终汇总发布，否则由后续主 Agent 汇总轮覆盖旧候选并在收敛后通知。普通 GUI fork 没有 `origin: 'subagent'`，仍是可独立通知的任务。
 
 ## 安装
 

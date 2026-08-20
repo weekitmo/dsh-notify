@@ -8,6 +8,7 @@ export interface NotifyProjectionValue {
   readonly turn: number
   readonly reason: string
   readonly body: string
+  readonly startedAsyncDelegation: boolean
 }
 
 export interface DingTalkPublicSettings {

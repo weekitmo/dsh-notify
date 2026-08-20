@@ -2,13 +2,13 @@ import type { ClientContext, SessionId, SessionListState, SnapshotStore } from '
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 import type { AttentionEntry, NotificationReason, NotificationSettings } from '../contract.ts'
-import { asReason, reasonEnabled, toneOf } from './decision.ts'
+import { reasonEnabled } from './decision.ts'
 import { loadDingTalkSettings, saveDingTalkSettings, sendDingTalkTest } from './dingtalk.ts'
 import { FaviconNotifier } from './favicon.ts'
 import { NotifySettingsSection, type SettingsInjected } from './SettingsSection.tsx'
 import { en, NS, zh, type NotifyKey } from './locales.ts'
 import { createNotification, notificationBody, NotificationRegistry, notificationsApi, notificationTitleKey, shouldShowSystem } from './notifier.ts'
-import { projectionAdvance } from './runner.ts'
+import { CompletionRunner, type CompletionListSnapshot } from './runner.ts'
 import { SidebarIndicators } from './sidebar.ts'
 import { SettingsNavBell } from './settings-nav.ts'
 import { attentionEntries, createAttentionStore, createNotificationSettingsStore } from './store.ts'
@@ -118,51 +118,36 @@ export function apply(ctx: ClientContext): void {
   }
 
   ctx.effect(() => {
-    const observedTurns = new Map<string, number>()
-    const seed = (): void => {
-      observedTurns.clear()
+    const completion = new CompletionRunner(
+      initialList as unknown as CompletionListSnapshot,
+      {
+        publish(entry): void {
+          const currentSettings = settings.getSnapshot()
+          if (!currentSettings.enabled || !reasonEnabled(currentSettings, entry.reason)) return
+          const state = sessions.list.getSnapshot()
+          if (state.current !== entry.sessionId || document.hidden) attention.put(entry)
+          const permission = notificationsApi()?.permission ?? 'denied'
+          if (shouldShowSystem(
+            permission,
+            currentSettings,
+            document.hidden,
+            entry.sessionId,
+            state.current,
+          )) show(entry)
+        },
+      },
+    )
+    const update = (): void => {
       const state = sessions.list.getSnapshot()
-      for (const id of state.ids) {
-        observedTurns.set(id, state.byId[id]?.projectionValues?.dshNotify?.turn ?? 0)
-      }
-    }
-    seed()
-    const stopList = sessions.list.subscribe(() => {
-      const state = sessions.list.getSnapshot()
-      const currentSettings = settings.getSnapshot()
       if (state.current !== undefined && !document.hidden) attention.clear(state.current)
-      for (const id of state.ids) {
-        const summary = state.byId[id]
-        if (summary === undefined || summary.origin === 'subagent') continue
-        const projection = summary.projectionValues?.dshNotify
-        const advanced = projectionAdvance(observedTurns.get(id), projection)
-        observedTurns.set(id, advanced.turn)
-        if (!advanced.fresh || projection === undefined) continue
-        const reason = asReason(projection.reason)
-        if (reason === undefined) continue
-        const entry: AttentionEntry = {
-          sessionId: id,
-          turn: projection.turn,
-          reason,
-          tone: toneOf(reason),
-          title: summary.displayTitle,
-          body: projection.body,
-          createdAt: Date.now(),
-        }
-        if (!currentSettings.enabled || !reasonEnabled(currentSettings, reason)) continue
-        if (state.current !== id || document.hidden) attention.put(entry)
-        const permission = notificationsApi()?.permission ?? 'denied'
-        if (shouldShowSystem(permission, currentSettings, document.hidden, id, state.current)) show(entry)
-      }
+      completion.update(state as unknown as CompletionListSnapshot)
       if (state.phase === 'ready') {
         const live = new Set<string>(state.ids)
         attention.retain(live)
-        for (const id of observedTurns.keys()) {
-          if (!live.has(id)) observedTurns.delete(id)
-        }
       }
       renderSurfaces()
-    })
+    }
+    const stopList = sessions.list.subscribe(update)
     const onVisibility = (): void => {
       if (!document.hidden) {
         const current = sessions.list.getSnapshot().current
@@ -173,6 +158,7 @@ export function apply(ctx: ClientContext): void {
     document.addEventListener('visibilitychange', onVisibility)
     return () => {
       stopList()
+      completion.dispose()
       document.removeEventListener('visibilitychange', onVisibility)
     }
   }, 'dsh-notify: session lifecycle')

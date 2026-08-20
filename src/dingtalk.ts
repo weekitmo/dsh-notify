@@ -142,11 +142,11 @@ function bounded(value: string, limit: number): string {
 
 function notificationTitle(reason: DingTalkNotification['reason']): string {
   switch (reason) {
-    case 'completed': return 'DSH 主 Agent 本轮已完成'
-    case 'error': return 'DSH 主 Agent 本轮失败'
-    case 'aborted': return 'DSH 主 Agent 本轮已中止'
-    case 'blocked': return 'DSH 主 Agent 本轮被阻塞'
-    case 'max-tokens': return 'DSH 主 Agent 本轮达到令牌限制'
+    case 'completed': return 'DSH 任务已完成'
+    case 'error': return 'DSH 任务失败'
+    case 'aborted': return 'DSH 任务已中止'
+    case 'blocked': return 'DSH 任务被阻塞'
+    case 'max-tokens': return 'DSH 任务达到令牌限制'
   }
 }
 

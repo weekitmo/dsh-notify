@@ -8,7 +8,7 @@ A task status notification plugin for DeepSeek Harness. It provides clear status
 
 ## Features
 
-- **System notifications**: Receive notifications for each main-agent (top-level session) turn that completes, fails, aborts, blocks, or hits the token limit. Each result type can be disabled separately. Subagents do not notify separately.
+- **System notifications**: Receive completion, failure, abort, block, or token-limit results only after a top-level task fully settles. Each result type can be disabled separately.
 - **DingTalk robot**: Configure an Access Token and Signing Secret, independently select success/completion or failure/abort messages, and use do-not-disturb with a missed-message summary.
 - **Tab status**: Shows the latest workspace session title while idle, a spinner and session count while running, and an unread result count after completion or failure.
 - **Sidebar indicators**: Shows a green dot for an unread completed session and a red dot for an error, abort, block, or token limit. Opening the session clears the indicator.
@@ -23,19 +23,22 @@ A task status notification plugin for DeepSeek Harness. It provides clear status
 flowchart TB
   subgraph Host[DSH Host / Cordis]
     Events[Session event log] --> Projection[dshNotify Session Projection]
-    Events --> Listener[Global session/event listener]
-    Listener --> HostFilter{origin is subagent?}
-    HostFilter -->|yes| IgnoreHost[Ignore subagent notification]
-    HostFilter -->|no| DingQueue[Durable DingTalk queue]
+    Events --> Coordinator[Task completion coordinator]
+    Agents[Agent status] --> Coordinator
+    Jobs[Job status] --> Coordinator
+    Coordinator --> HostFilter{Task fully settled?}
+    HostFilter -->|no| PendingHost[Keep or cancel candidate]
+    HostFilter -->|yes| DingQueue[Durable DingTalk queue]
     DingQueue --> DingTalk[DingTalk robot]
     SettingsApi[Same-origin loopback settings route] --> DingQueue
   end
 
   subgraph Web[DSH Web Client]
     Projection --> SessionList[sessions.list projection snapshots]
-    SessionList --> ClientFilter{origin is subagent?}
-    ClientFilter -->|yes| IgnoreClient[Ignore independent outcome]
-    ClientFilter -->|no| Unread[Unread state per top-level session]
+    SessionList --> ClientState[pending / published state machine]
+    ClientState --> ClientFilter{Task fully settled?}
+    ClientFilter -->|no| PendingClient[Keep or cancel candidate]
+    ClientFilter -->|yes| Unread[Final AttentionEntry]
     Unread --> System[Browser system notification]
     Unread --> Title[Aggregated document.title]
     Unread --> Sidebar[Sidebar status indicator]
@@ -49,11 +52,11 @@ flowchart TB
   end
 ```
 
-The Host entry registers the projection with `ctx.sessionProjections.register(...)`, observes completion events with `ctx.on('session/event', ..., { global: true })`, and manages routes and resources with `ctx.effect(...)`. The Client entry subscribes to `sessions.list` and injects its settings UI through `ctx.slots.inject('settings.section', ...)`.
+The Host entry registers the projection with `ctx.sessionProjections.register(...)` and coordinates Session, Agent, and Job lifecycle signals. The Client subscribes to `sessions.list` and reevaluates candidates on every snapshot. Both sides use a short cancellable convergence window to cover the race where a settled job synchronously wakes the main Agent with a followup.
 
-Subagent Sessions carry `origin: 'subagent'`. Both the Host DingTalk path and the browser system-notification, unread-tab, and sidebar paths filter them at their respective inputs. There is therefore no subagent-success switch today: the effective behavior is permanently off. Running subagents are only folded into their visible parent's running count.
+Subagent Sessions carry `origin: 'subagent'`. Both the Host DingTalk path and the browser system-notification, unread-tab, and sidebar paths filter them before a candidate becomes a final result. There is therefore no subagent-success switch today. Running subagents are still folded into their visible parent's running count.
 
-A notification describes a main-agent turn reaching `turn/end`, not completion of an entire project objective. If a main-agent turn ends while background subagents are still running, a main-agent turn-completed notification can still appear; it was not triggered by a subagent finishing.
+`turn/end` creates only a pending candidate. Publication requires the top-level session to be idle, no running/stopping jobs in the task or its subagent descendants, no running subagent descendants, no active automatic goal, and no unsettled async delegation at turn end. COI, background subagent/bash, workflow, and goal launch turns remain suppressed while delegated work is unsettled. A turn that explicitly waits for and collects every terminal result may still publish as the final summary; otherwise a later main-Agent summary replaces the candidate and notifies after convergence. An ordinary GUI fork has no `origin: 'subagent'` and remains an independently notifiable task.
 
 ## Installation
 

@@ -1,31 +1,22 @@
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
+import type {} from '@deepseek-ai/dsh-agent'
 import type {} from '@deepseek-ai/dsh-host-webserver'
-import type { Session, SessionEvent } from '@deepseek-ai/dsh-session'
+import type {} from '@deepseek-ai/dsh-jobs'
+import type { Session } from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-session-projection'
 import type {} from '@deepseek-ai/dsh-session-title'
 import { createDingTalkRoute, DingTalkService } from './dingtalk.ts'
+import { HostNotificationCoordinator } from './host-notification.ts'
 import { notifyProjection } from './projection.ts'
 import type { ResolvedConfig } from './types.ts'
 
 export const name = 'dsh-notify'
-export const inject = ['sessions', 'sessionProjections', 'sessionTitle', 'webServer']
+export const inject = ['agents', 'jobs', 'sessions', 'sessionProjections', 'sessionTitle', 'webServer']
 
 export interface Config {}
 
 export const Config = z.object({})
-
-function notificationReason(event: SessionEvent<'turn/end'>): import('./contract.ts').NotificationReason | undefined {
-  switch (event.data.reason.kind) {
-    case 'completed': return 'completed'
-    case 'error': return 'error'
-    case 'aborted':
-    case 'interrupted': return 'aborted'
-    case 'blocked': return 'blocked'
-    case 'max-tokens': return 'max-tokens'
-    default: return undefined
-  }
-}
 
 async function resolvedSessionTitle(ctx: Context, session: Session): Promise<string> {
   const existing = ctx.sessionTitle.get(session)
@@ -44,17 +35,6 @@ async function resolvedSessionTitle(ctx: Context, session: Session): Promise<str
   }
 }
 
-function turnBody(session: Session, turn: number, maxChars: number): string {
-  let body = ''
-  for (const event of session.events) {
-    if (event.type !== 'assistant/message' || event.data.turn !== turn) continue
-    for (const block of event.data.message.content) {
-      if (block.type === 'text') body += block.text
-    }
-  }
-  return Array.from(body.trim()).slice(0, maxChars).join('')
-}
-
 export async function apply(ctx: Context, config?: Config): Promise<void> {
   Config(config ?? {})
   const resolved: ResolvedConfig = { maxBodyChars: 2000 }
@@ -71,19 +51,28 @@ export async function apply(ctx: Context, config?: Config): Promise<void> {
     'dsh-notify: DingTalk API',
   )
   ctx.effect(() => () => { dingTalk.dispose() }, 'dsh-notify: DingTalk service')
-  ctx.on('session/event', (session, event) => {
-    if (event.type !== 'turn/end' || session.header.origin === 'subagent') return
-    const reason = notificationReason(event)
-    if (reason === undefined || !dingTalk.enabledFor(reason)) return
-    void (async () => {
+
+  const coordinator = new HostNotificationCoordinator({
+    agents: ctx.agents,
+    jobs: ctx.jobs,
+    sessions: ctx.sessions,
+    maxBodyChars: resolved.maxBodyChars,
+    async publish(candidate, signal): Promise<void> {
+      if (signal.aborted || !dingTalk.enabledFor(candidate.reason)) return
+      const title = await resolvedSessionTitle(ctx, candidate.session)
+      if (signal.aborted || !dingTalk.enabledFor(candidate.reason)) return
       await dingTalk.notify({
-        eventId: String(session.id) + ':' + String(event.data.turn),
-        sessionId: String(session.id),
-        turn: event.data.turn,
-        reason,
-        title: await resolvedSessionTitle(ctx, session),
-        body: turnBody(session, event.data.turn, resolved.maxBodyChars),
+        eventId: String(candidate.session.id) + ':' + String(candidate.turn),
+        sessionId: String(candidate.session.id),
+        turn: candidate.turn,
+        reason: candidate.reason,
+        title,
+        body: candidate.body,
       })
-    })().catch(error => { ctx.logger.warn(error instanceof Error ? error : new Error(String(error))) })
-  }, { global: true })
+    },
+    onError(error): void {
+      ctx.logger.warn(error)
+    },
+  })
+  ctx.effect(() => coordinator.attach(ctx), 'dsh-notify: completion coordinator')
 }
