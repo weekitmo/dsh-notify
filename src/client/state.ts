@@ -1,6 +1,15 @@
 import type { AttentionEntry, NotificationReason, NotificationSettings } from '../contract.ts'
 import { reasonEnabled } from './decision.ts'
 
+export const DEFAULT_MAX_BODY_CHARS = 400
+export const MIN_MAX_BODY_CHARS = 100
+export const MAX_MAX_BODY_CHARS = 2000
+
+export function validMaxBodyChars(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value)
+    && value >= MIN_MAX_BODY_CHARS && value <= MAX_MAX_BODY_CHARS
+}
+
 export function defaultNotificationSettings(): NotificationSettings {
   return {
     enabled: true,
@@ -11,6 +20,7 @@ export function defaultNotificationSettings(): NotificationSettings {
     idleFaviconIndicator: false,
     sidebarIndicators: true,
     titleAnimation: 'marquee',
+    maxBodyChars: DEFAULT_MAX_BODY_CHARS,
     backgroundOnly: false,
     notifyCompleted: true,
     notifyError: true,
@@ -47,6 +57,7 @@ export function normalizeNotificationSettings(value: unknown): NotificationSetti
     idleFaviconIndicator: booleanOr(source.idleFaviconIndicator, defaults.idleFaviconIndicator),
     sidebarIndicators: booleanOr(source.sidebarIndicators, defaults.sidebarIndicators),
     titleAnimation: animation,
+    maxBodyChars: validMaxBodyChars(source.maxBodyChars) ? source.maxBodyChars : defaults.maxBodyChars,
     backgroundOnly: booleanOr(source.backgroundOnly, defaults.backgroundOnly),
     notifyCompleted: booleanOr(source.notifyCompleted, defaults.notifyCompleted),
     notifyError: booleanOr(source.notifyError, defaults.notifyError),

@@ -17,6 +17,7 @@ describe('notification state', () => {
       idleFaviconIndicator: false,
       sidebarIndicators: true,
       titleAnimation: 'marquee',
+      maxBodyChars: 400,
       backgroundOnly: false,
       notifyCompleted: true,
       notifyError: true,
@@ -34,6 +35,10 @@ describe('notification state', () => {
     expect(normalized.idleTitleAnimation).toBe(true)
     expect(normalized.idleFaviconIndicator).toBe(false)
     expect(normalized.notifyBlocked).toBe(true)
+    expect(normalized.maxBodyChars).toBe(400)
+    expect(normalizeNotificationSettings({ maxBodyChars: 99 }).maxBodyChars).toBe(400)
+    expect(normalizeNotificationSettings({ maxBodyChars: 2001 }).maxBodyChars).toBe(400)
+    expect(normalizeNotificationSettings({ maxBodyChars: 1200 }).maxBodyChars).toBe(1200)
     expect(normalizeNotificationSettings('{bad' as unknown)).toEqual(defaultNotificationSettings())
   })
 

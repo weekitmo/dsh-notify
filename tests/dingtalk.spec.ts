@@ -127,7 +127,7 @@ describe('DingTalk host service', () => {
     expect(records[0]!.url.searchParams.get('access_token')).toBe('token')
     expect(records[0]!.url.searchParams.get('timestamp')).toBe(String(now.getTime()))
     expect(records[0]!.url.searchParams.get('sign')).toBe(dingTalkSign('SEC-secret', now.getTime()))
-    expect(records[0]!.body).toMatchObject({ msgtype: 'markdown', markdown: { title: 'DSH 任务失败' } })
+    expect(records[0]!.body).toMatchObject({ msgtype: 'markdown', markdown: { title: 'DSH 主 Agent 本轮失败' } })
     service.dispose()
   })
 
@@ -155,7 +155,7 @@ describe('DingTalk host service', () => {
     const retry = new DingTalkService({ root, fetch: successFetch(records) })
     await retry.initialize()
     await vi.waitFor(() => { expect(records).toHaveLength(1) })
-    expect(records[0]!.body).toMatchObject({ markdown: { title: 'DSH 任务已完成' } })
+    expect(records[0]!.body).toMatchObject({ markdown: { title: 'DSH 主 Agent 本轮已完成' } })
     await vi.waitFor(async () => {
       await expect(readFile(join(root, 'dingtalk-missed.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' })
     })

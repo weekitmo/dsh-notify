@@ -65,7 +65,11 @@ export function notificationTitleKey(reason: NotificationReason):
   }
 }
 
-export function notificationBody(entry: AttentionEntry, fallback: string): string {
-  const body = entry.body.trim() === '' ? fallback : entry.body.trim()
+export function notificationBody(entry: AttentionEntry, fallback: string, maxBodyChars: number): string {
+  const source = entry.body.trim() === '' ? fallback : entry.body.trim()
+  const characters = Array.from(source)
+  const body = characters.length <= maxBodyChars
+    ? source
+    : characters.slice(0, Math.max(0, maxBodyChars - 1)).join('') + '…'
   return `${entry.title}: ${body}`
 }

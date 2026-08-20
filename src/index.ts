@@ -11,13 +11,9 @@ import type { ResolvedConfig } from './types.ts'
 export const name = 'dsh-notify'
 export const inject = ['sessions', 'sessionProjections', 'sessionTitle', 'webServer']
 
-export interface Config {
-  maxBodyChars: number
-}
+export interface Config {}
 
-export const Config = z.object({
-  maxBodyChars: z.natural().min(1).default(400),
-})
+export const Config = z.object({})
 
 function notificationReason(event: SessionEvent<'turn/end'>): import('./contract.ts').NotificationReason | undefined {
   switch (event.data.reason.kind) {
@@ -60,7 +56,8 @@ function turnBody(session: Session, turn: number, maxChars: number): string {
 }
 
 export async function apply(ctx: Context, config?: Config): Promise<void> {
-  const resolved: ResolvedConfig = Config(config ?? {})
+  Config(config ?? {})
+  const resolved: ResolvedConfig = { maxBodyChars: 2000 }
   ctx.sessionProjections.register(notifyProjection(resolved))
 
   const dingTalk = new DingTalkService()

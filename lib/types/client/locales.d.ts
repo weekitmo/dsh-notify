@@ -7,6 +7,9 @@ export declare const zh: {
     'settings.system.title': string;
     'settings.system.enabled': string;
     'settings.system.backgroundOnly': string;
+    'settings.system.maxBodyChars': string;
+    'settings.system.maxBodyCharsDesc': string;
+    'settings.system.maxBodyCharsError': string;
     'settings.permission.title': string;
     'settings.permission.granted': string;
     'settings.permission.denied': string;
@@ -22,6 +25,8 @@ export declare const zh: {
     'settings.dingtalk.configured': string;
     'settings.dingtalk.notConfigured': string;
     'settings.dingtalk.keepValue': string;
+    'settings.dingtalk.showSecret': string;
+    'settings.dingtalk.hideSecret': string;
     'settings.dingtalk.credentialsTogether': string;
     'settings.dingtalk.outcomes': string;
     'settings.dingtalk.completed': string;
@@ -85,6 +90,9 @@ export declare const en: {
     'settings.system.title': string;
     'settings.system.enabled': string;
     'settings.system.backgroundOnly': string;
+    'settings.system.maxBodyChars': string;
+    'settings.system.maxBodyCharsDesc': string;
+    'settings.system.maxBodyCharsError': string;
     'settings.permission.title': string;
     'settings.permission.granted': string;
     'settings.permission.denied': string;
@@ -100,6 +108,8 @@ export declare const en: {
     'settings.dingtalk.configured': string;
     'settings.dingtalk.notConfigured': string;
     'settings.dingtalk.keepValue': string;
+    'settings.dingtalk.showSecret': string;
+    'settings.dingtalk.hideSecret': string;
     'settings.dingtalk.credentialsTogether': string;
     'settings.dingtalk.outcomes': string;
     'settings.dingtalk.completed': string;

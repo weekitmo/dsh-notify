@@ -1,4 +1,8 @@
 import type { AttentionEntry, NotificationSettings } from '../contract.ts';
+export declare const DEFAULT_MAX_BODY_CHARS = 400;
+export declare const MIN_MAX_BODY_CHARS = 100;
+export declare const MAX_MAX_BODY_CHARS = 2000;
+export declare function validMaxBodyChars(value: unknown): value is number;
 export declare function defaultNotificationSettings(): NotificationSettings;
 export interface AttentionState {
     readonly bySession: Record<string, AttentionEntry>;

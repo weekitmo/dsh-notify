@@ -8,12 +8,52 @@ DeepSeek Harness 的任务状态通知插件。它在任务运行、完成或异
 
 ## 功能
 
-- **系统通知**：完成、错误、中止、阻塞、Token 限制均可通知；可在设置中单独关闭某一类。
+- **系统通知**：主 Agent（顶层会话）每轮的完成、错误、中止、阻塞、Token 限制均可通知；可在设置中单独关闭某一类。子代理不会单独通知。
 - **钉钉机器人**：配置 Access Token 与 Signing Secret，独立选择“成功 / 完成”或“失败 / 中止”消息，并支持免打扰和结束后错过消息汇总。
 - **Tab 状态**：空闲时显示最近工作区会话标题；运行中显示 spinner 和会话数；完成或异常后显示未读结果计数。
 - **侧栏状态灯**：会话完成且尚未查看时显示绿色圆点；错误、中止、阻塞或 Token 限制显示红色圆点。打开会话后清除。
 - **状态兼容**：执行中的会话保留 DSH 自带 loading，等待审批或回答时保留原生警告状态。
 - **可配置**：可在 WebUI 的 **设置 > 通知** 中控制通知权限、Tab 动效、favicon、spinner、侧栏状态灯和结果类型。
+
+## 架构
+
+`dsh-notify` 是标准的 Cordis Host/Client 插件，不修改 DeepSeek Harness 核心。它使用 DSH 提供的 Session 事件、Session Projection、Client Runtime 和 UI Slot 扩展点；这里不是 `packages/hooks/*` 的外部 CLI hooks 适配器。
+
+```mermaid
+flowchart TB
+  subgraph Host[DSH Host / Cordis]
+    Events[Session 事件日志] --> Projection[dshNotify Session Projection]
+    Events --> Listener[全局 session/event 监听]
+    Listener --> HostFilter{origin 是 subagent?}
+    HostFilter -->|是| IgnoreHost[忽略，不发送子代理通知]
+    HostFilter -->|否| DingQueue[钉钉持久队列]
+    DingQueue --> DingTalk[钉钉机器人]
+    SettingsApi[同源回环设置接口] --> DingQueue
+  end
+
+  subgraph Web[DSH Web Client]
+    Projection --> SessionList[sessions.list 投影快照]
+    SessionList --> ClientFilter{origin 是 subagent?}
+    ClientFilter -->|是| IgnoreClient[忽略独立完成结果]
+    ClientFilter -->|否| Unread[每个顶层会话的未读状态]
+    Unread --> System[浏览器系统通知]
+    Unread --> Title[document.title 汇总]
+    Unread --> Sidebar[侧栏状态灯]
+    SessionList --> Running[将运行中子代理折叠到可见父会话]
+    Running --> Title
+    LocalSettings[localStorage 设置] --> System
+    LocalSettings --> Title
+    LocalSettings --> Sidebar
+    Slot[settings.section UI Slot] --> LocalSettings
+    Slot --> SettingsApi
+  end
+```
+
+Host 入口通过 `ctx.sessionProjections.register(...)` 注册投影、通过 `ctx.on('session/event', ..., { global: true })` 监听结束事件，并用 `ctx.effect(...)` 管理路由和资源生命周期。Client 入口订阅 `sessions.list`，再通过 `ctx.slots.inject('settings.section', ...)` 注入设置页。
+
+子代理 Session 带有 `origin: 'subagent'`。Host 的钉钉出口和浏览器端的系统通知、Tab 未读结果、侧栏状态灯都会在各自入口过滤它，因此当前没有“子代理成功通知”开关：其效果等同于固定关闭。运行中的子代理仅折叠进可见父会话的运行计数。
+
+通知描述的是主 Agent 某一轮的 `turn/end`，不是整个项目目标完成。如果主 Agent 本轮已经结束、但后台子代理仍在运行，仍可能看到主 Agent 本轮完成通知；这不是子代理完成触发。
 
 ## 安装
 
@@ -62,6 +102,8 @@ install.bat
 | 设置 | 默认 |
 | --- | --- |
 | 系统通知 | 开 |
+| 系统通知正文最大字符数 | 400（可设置 100–2000） |
+| 子代理独立完成通知 | 关（固定；仅跟随父会话运行计数） |
 | Tab 未读结果汇总 | 开 |
 | Tab 运行中 spinner | 开 |
 | Tab 空闲标题动效 | 开 |
@@ -76,14 +118,7 @@ install.bat
 
 钉钉凭据与策略保存在 `$DSH_HOME/dsh-notify/settings.json`，不会写入浏览器 `localStorage`，API 也不会把凭据回传给页面。凭据管理接口仅接受本机回环地址上的同源 WebUI 请求；通过局域网或公网地址访问 WebUI 时不能修改钉钉配置。免打扰固定按 `Asia/Shanghai` 判断，支持跨午夜；开启汇总后，期间消息会暂存到同目录的 `dingtalk-missed.json`，结束时合并为一条通知。普通任务结果也会在发送前短暂写入该持久队列，失败或重启后自动重试；交付采用 at-least-once 语义，极端崩溃窗口可能重复，但不会静默丢失。更换机器人凭据会在保存新凭据前清空旧队列，关闭结果分类也会移除对应待发消息。POSIX 系统使用 `0700` 目录和 `0600` 文件权限；Windows 依赖当前用户的文件 ACL，并继续拒绝符号链接和非普通文件。
 
-Host 侧可配置最近回复摘要的最大长度。在 `$DSH_HOME/profiles/web/cordis.patch.yml` 中添加或覆盖：
-
-```yaml
-- id: dsh-notify
-  name: dsh-notify
-  config:
-    maxBodyChars: 400
-```
+系统通知正文最大字符数可直接在 dsh-notify 设置页调整，修改后立即生效。
 
 ## 卸载
 

@@ -33,6 +33,27 @@ describe('recentWorkspaceSessionTitle', () => {
 })
 
 describe('TitleNotifier', () => {
+  it('uses requestAnimationFrame while the page is visible', () => {
+    const target = { title: 'DeepSeek Harness' }
+    let frame: FrameRequestCallback | undefined
+    let fallbackScheduled = false
+    const notifier = new TitleNotifier(
+      target,
+      () => { fallbackScheduled = true; return 1 },
+      () => {},
+      callback => { frame = callback; return 2 },
+      () => {},
+      () => false,
+      () => 0,
+    )
+    notifier.render('dsh (1 completed)', 'marquee', false, true)
+    expect(fallbackScheduled).toBe(false)
+    expect(frame).toBeDefined()
+    frame?.(1000)
+    expect(target.title).not.toBe('dsh (1 completed)')
+    notifier.dispose()
+  })
+
   it('renders a stable workspace title without scheduling animation', () => {
     const target = { title: 'DeepSeek Harness' }
     let scheduled = false

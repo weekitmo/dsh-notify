@@ -8,12 +8,52 @@ A task status notification plugin for DeepSeek Harness. It provides clear status
 
 ## Features
 
-- **System notifications**: Receive notifications for completed, failed, aborted, blocked, and token-limited tasks. Each result type can be disabled separately.
+- **System notifications**: Receive notifications for each main-agent (top-level session) turn that completes, fails, aborts, blocks, or hits the token limit. Each result type can be disabled separately. Subagents do not notify separately.
 - **DingTalk robot**: Configure an Access Token and Signing Secret, independently select success/completion or failure/abort messages, and use do-not-disturb with a missed-message summary.
 - **Tab status**: Shows the latest workspace session title while idle, a spinner and session count while running, and an unread result count after completion or failure.
 - **Sidebar indicators**: Shows a green dot for an unread completed session and a red dot for an error, abort, block, or token limit. Opening the session clears the indicator.
 - **Native state compatibility**: Active sessions keep the built-in DSH loading state, while approval and question prompts keep their native warning state.
 - **Configurable behavior**: Control notification permissions, tab animation, favicon, spinner, sidebar indicators, and result types under **Settings > Notifications** in the WebUI.
+
+## Architecture
+
+`dsh-notify` is a standard Cordis Host/Client plugin and does not modify DeepSeek Harness core. It uses DSH Session events, Session Projection, Client Runtime, and UI Slot extension points; it is not an adapter built on the external CLI hooks under `packages/hooks/*`.
+
+```mermaid
+flowchart TB
+  subgraph Host[DSH Host / Cordis]
+    Events[Session event log] --> Projection[dshNotify Session Projection]
+    Events --> Listener[Global session/event listener]
+    Listener --> HostFilter{origin is subagent?}
+    HostFilter -->|yes| IgnoreHost[Ignore subagent notification]
+    HostFilter -->|no| DingQueue[Durable DingTalk queue]
+    DingQueue --> DingTalk[DingTalk robot]
+    SettingsApi[Same-origin loopback settings route] --> DingQueue
+  end
+
+  subgraph Web[DSH Web Client]
+    Projection --> SessionList[sessions.list projection snapshots]
+    SessionList --> ClientFilter{origin is subagent?}
+    ClientFilter -->|yes| IgnoreClient[Ignore independent outcome]
+    ClientFilter -->|no| Unread[Unread state per top-level session]
+    Unread --> System[Browser system notification]
+    Unread --> Title[Aggregated document.title]
+    Unread --> Sidebar[Sidebar status indicator]
+    SessionList --> Running[Fold running subagents into visible parent]
+    Running --> Title
+    LocalSettings[localStorage settings] --> System
+    LocalSettings --> Title
+    LocalSettings --> Sidebar
+    Slot[settings.section UI Slot] --> LocalSettings
+    Slot --> SettingsApi
+  end
+```
+
+The Host entry registers the projection with `ctx.sessionProjections.register(...)`, observes completion events with `ctx.on('session/event', ..., { global: true })`, and manages routes and resources with `ctx.effect(...)`. The Client entry subscribes to `sessions.list` and injects its settings UI through `ctx.slots.inject('settings.section', ...)`.
+
+Subagent Sessions carry `origin: 'subagent'`. Both the Host DingTalk path and the browser system-notification, unread-tab, and sidebar paths filter them at their respective inputs. There is therefore no subagent-success switch today: the effective behavior is permanently off. Running subagents are only folded into their visible parent's running count.
+
+A notification describes a main-agent turn reaching `turn/end`, not completion of an entire project objective. If a main-agent turn ends while background subagents are still running, a main-agent turn-completed notification can still appear; it was not triggered by a subagent finishing.
 
 ## Installation
 
@@ -62,6 +102,8 @@ Browser settings are stored in `localStorage` for the current site. The defaults
 | Setting | Default |
 | --- | --- |
 | System notifications | On |
+| Maximum system notification body characters | 400 (range 100–2000) |
+| Independent subagent completion notifications | Off (fixed; only folded into parent running counts) |
 | Unread result summary in the tab | On |
 | Running spinner in the tab | On |
 | Idle tab title animation | On |
@@ -76,14 +118,7 @@ Browser settings are stored in `localStorage` for the current site. The defaults
 
 DingTalk credentials and policy are stored in `$DSH_HOME/dsh-notify/settings.json`, never in browser `localStorage`, and the API never returns credentials to the page. Credential management accepts only same-origin WebUI requests over a local loopback address; DingTalk settings cannot be changed through a LAN or public WebUI address. Do not disturb uses `Asia/Shanghai`, supports overnight ranges, and persists held messages in `dingtalk-missed.json` before sending one digest at the end. Ordinary task results also enter this durable queue before delivery and retry after failure or restart. Delivery is at least once: an extreme crash window may duplicate a message, but does not silently lose it. Rotating robot credentials clears the old queue before saving the new credentials, and disabling an outcome category removes matching pending messages. POSIX systems use a `0700` directory and `0600` files; Windows relies on the current user's file ACL while still rejecting symlinks and non-regular files.
 
-The host-side maximum length of the latest response summary can be configured in `$DSH_HOME/profiles/web/cordis.patch.yml`:
-
-```yaml
-- id: dsh-notify
-  name: dsh-notify
-  config:
-    maxBodyChars: 400
-```
+The maximum system notification body length can be changed directly in the dsh-notify settings page and takes effect immediately.
 
 ## Uninstall
 

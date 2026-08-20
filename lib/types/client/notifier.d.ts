@@ -14,4 +14,4 @@ export declare class NotificationRegistry {
 }
 export declare function shouldShowSystem(permission: NotificationPermission, settings: NotificationSettings, documentHidden: boolean, completedSessionId: string, currentSessionId: string | undefined): boolean;
 export declare function notificationTitleKey(reason: NotificationReason): 'notify.completed' | 'notify.error' | 'notify.aborted' | 'notify.blocked' | 'notify.maxTokens';
-export declare function notificationBody(entry: AttentionEntry, fallback: string): string;
+export declare function notificationBody(entry: AttentionEntry, fallback: string, maxBodyChars: number): string;

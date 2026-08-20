@@ -31,7 +31,7 @@ describe('dsh-notify host composition', () => {
     process.env.DSH_HOME = await mkdtemp(join(tmpdir(), 'dsh-notify-composition-'))
     const ctx = new Context()
     await mountHost(ctx)
-    const fiber = ctx.plugin({ inject: plugin.inject, apply: plugin.apply }, { maxBodyChars: 100 })
+    const fiber = ctx.plugin({ inject: plugin.inject, apply: plugin.apply }, {})
     await fiber
 
     const sessions = ctx.get('sessions') as SessionStore
@@ -75,7 +75,7 @@ describe('dsh-notify host composition', () => {
 
     const ctx = new Context()
     await mountHost(ctx)
-    const fiber = ctx.plugin({ inject: plugin.inject, apply: plugin.apply }, { maxBodyChars: 100 })
+    const fiber = ctx.plugin({ inject: plugin.inject, apply: plugin.apply }, {})
     await fiber
     const sessions = ctx.get('sessions') as SessionStore
     const session = sessions.create(undefined, { meta: { cwd: '/tmp/dsh-notify' } })
@@ -95,7 +95,7 @@ describe('dsh-notify host composition', () => {
     expect(JSON.parse(String(init?.body))).toMatchObject({
       msgtype: 'markdown',
       markdown: {
-        title: 'DSH 任务已完成',
+        title: 'DSH 主 Agent 本轮已完成',
         text: expect.stringMatching(/Generated deployment title[\s\S]*host notification body/),
       },
     })
@@ -105,8 +105,8 @@ describe('dsh-notify host composition', () => {
     else process.env.DSH_HOME = previousHome
   })
 
-  it('validates the host projection configuration', () => {
-    expect(plugin.Config({})).toEqual({ maxBodyChars: 400 })
-    expect(() => plugin.Config({ maxBodyChars: 0 })).toThrow()
+  it('accepts but no longer applies the legacy host body-length field', () => {
+    expect(plugin.Config({})).toEqual({})
+    expect(plugin.Config({ maxBodyChars: 400 })).toEqual({ maxBodyChars: 400 })
   })
 })

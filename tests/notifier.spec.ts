@@ -45,7 +45,8 @@ describe('system notification helpers', () => {
 
   it('prefixes the notification body with its session title', () => {
     const value = { sessionId: 'a', turn: 1, reason: 'error', tone: 'error', title: 'Deploy', body: ' boom ', createdAt: 1 } as const
-    expect(notificationBody(value, 'ended')).toBe('Deploy: boom')
-    expect(notificationBody({ ...value, body: '' }, 'ended')).toBe('Deploy: ended')
+    expect(notificationBody(value, 'ended', 100)).toBe('Deploy: boom')
+    expect(notificationBody({ ...value, body: '' }, 'ended', 100)).toBe('Deploy: ended')
+    expect(notificationBody({ ...value, body: 'abcdefgh' }, 'ended', 5)).toBe('Deploy: abcd…')
   })
 })

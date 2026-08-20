@@ -37,6 +37,7 @@ export interface NotificationSettings {
     readonly idleFaviconIndicator: boolean;
     readonly sidebarIndicators: boolean;
     readonly titleAnimation: TitleAnimation;
+    readonly maxBodyChars: number;
     readonly backgroundOnly: boolean;
     readonly notifyCompleted: boolean;
     readonly notifyError: boolean;

@@ -4,6 +4,7 @@ import type { SnapshotStore } from '@deepseek-ai/dsh-client-runtime/client'
 import type { DingTalkPublicSettings, DingTalkSettingsUpdate, NotificationSettings } from '../contract.ts'
 import type { NotifyKey } from './locales.ts'
 import { notificationsApi } from './notifier.ts'
+import { MAX_MAX_BODY_CHARS, MIN_MAX_BODY_CHARS, validMaxBodyChars } from './state.ts'
 
 const DINGTALK_DOCS = 'https://open.dingtalk.com/document/dingstart/custom-bot-creation-and-installation'
 
@@ -18,7 +19,7 @@ export interface SettingsInjected {
 }
 
 type Props = PropsRuntime<'settings.section'> & InjectFace<SettingsInjected> & PropsLocale<'dsh-notify'>
-type BooleanField = Exclude<keyof NotificationSettings, 'titleAnimation'>
+type BooleanField = Exclude<keyof NotificationSettings, 'titleAnimation' | 'maxBodyChars'>
 
 function Toggle({ checked, label, desc, disabled = false, onChange }: {
   checked: boolean
@@ -35,6 +36,36 @@ function Toggle({ checked, label, desc, disabled = false, onChange }: {
   )
 }
 
+function MaxBodyCharsSetting({ value, set, t }: { value: number; set: SettingsInjected['set']; t: Props['t'] }) {
+  const [input, setInput] = useState(String(value))
+  useEffect(() => { setInput(String(value)) }, [value])
+  const parsed = Number(input)
+  const valid = input.trim() !== '' && validMaxBodyChars(parsed)
+  return (
+    <label className="dsh_notify_numberField">
+      <span>{t('settings.system.maxBodyChars')}</span>
+      <input
+        type="number"
+        min={MIN_MAX_BODY_CHARS}
+        max={MAX_MAX_BODY_CHARS}
+        step={1}
+        value={input}
+        aria-invalid={!valid}
+        aria-describedby="dsh-notify-max-body-desc"
+        onChange={event => {
+          const next = event.target.value
+          setInput(next)
+          const number = Number(next)
+          if (next.trim() !== '' && validMaxBodyChars(number)) set({ maxBodyChars: number })
+        }}
+      />
+      <small id="dsh-notify-max-body-desc" data-error={!valid ? 'true' : 'false'}>
+        {t(valid ? 'settings.system.maxBodyCharsDesc' : 'settings.system.maxBodyCharsError')}
+      </small>
+    </label>
+  )
+}
+
 const OUTCOMES: ReadonlyArray<{ field: BooleanField; key: NotifyKey }> = [
   { field: 'notifyCompleted', key: 'settings.outcomes.completed' },
   { field: 'notifyError', key: 'settings.outcomes.error' },
@@ -42,6 +73,41 @@ const OUTCOMES: ReadonlyArray<{ field: BooleanField; key: NotifyKey }> = [
   { field: 'notifyBlocked', key: 'settings.outcomes.blocked' },
   { field: 'notifyMaxTokens', key: 'settings.outcomes.maxTokens' },
 ]
+
+function SecretVisibilityIcon({ visible }: { visible: boolean }) {
+  return (
+    <svg className="dsh_notify_eyeIcon" viewBox="0 0 1024 1024" aria-hidden="true" focusable="false">
+      {visible
+        ? <>
+            <path d="M876.8 156.8c0-9.6-3.2-16-9.6-22.4s-12.8-9.6-22.4-9.6-16 3.2-22.4 9.6L736 220.8c-64-32-137.6-51.2-224-60.8-160 16-288 73.6-377.6 176S0 496 0 512s48 73.6 134.4 176c22.4 25.6 44.8 48 73.6 67.2l-86.4 89.6c-6.4 6.4-9.6 12.8-9.6 22.4s3.2 16 9.6 22.4 12.8 9.6 22.4 9.6 16-3.2 22.4-9.6l704-710.4c3.2-6.4 6.4-12.8 6.4-22.4m-646.4 528Q115.2 579.2 76.8 512q43.2-72 153.6-172.8C304 272 400 230.4 512 224c64 3.2 124.8 19.2 176 44.8l-54.4 54.4C598.4 300.8 560 288 512 288c-64 0-115.2 22.4-160 64s-64 96-64 160c0 48 12.8 89.6 35.2 124.8L256 707.2c-9.6-6.4-19.2-16-25.6-22.4m140.8-96Q352 555.2 352 512c0-44.8 16-83.2 48-112s67.2-48 112-48c28.8 0 54.4 6.4 73.6 19.2zM889.599 336c-12.8-16-28.8-28.8-41.6-41.6l-48 48c73.6 67.2 124.8 124.8 150.4 169.6q-43.2 72-153.6 172.8c-73.6 67.2-172.8 108.8-284.8 115.2-51.2-3.2-99.2-12.8-140.8-28.8l-48 48c57.6 22.4 118.4 38.4 188.8 44.8 160-16 288-73.6 377.6-176S1024 528 1024 512s-48.001-73.6-134.401-176" />
+            <path d="M511.998 672c-12.8 0-25.6-3.2-38.4-6.4l-51.2 51.2c28.8 12.8 57.6 19.2 89.6 19.2 64 0 115.2-22.4 160-64 41.6-41.6 64-96 64-160 0-32-6.4-64-19.2-89.6l-51.2 51.2c3.2 12.8 6.4 25.6 6.4 38.4 0 44.8-16 83.2-48 112s-67.2 48-112 48" />
+          </>
+        : <path d="M512 160c320 0 512 352 512 352S832 864 512 864 0 512 0 512s192-352 512-352m0 64c-225.28 0-384.128 208.064-436.8 288 52.608 79.872 211.456 288 436.8 288 225.28 0 384.128-208.064 436.8-288-52.608-79.872-211.456-288-436.8-288m0 64a224 224 0 1 1 0 448 224 224 0 0 1 0-448m0 64a160.19 160.19 0 0 0-160 160c0 88.192 71.744 160 160 160s160-71.808 160-160-71.744-160-160-160" />}
+    </svg>
+  )
+}
+
+function SecretInput({ label, value, placeholder, onChange, t }: {
+  label: string
+  value: string
+  placeholder: string
+  onChange: (value: string) => void
+  t: Props['t']
+}) {
+  const [visible, setVisible] = useState(false)
+  const action = t(visible ? 'settings.dingtalk.hideSecret' : 'settings.dingtalk.showSecret')
+  return (
+    <label>
+      <span>{label}</span>
+      <span className="dsh_notify_secretInput">
+        <input type={visible ? 'text' : 'password'} autoComplete="off" value={value} placeholder={placeholder} onChange={event => { onChange(event.target.value) }} />
+        <button type="button" aria-label={`${action}: ${label}`} title={action} aria-pressed={visible} onClick={() => { setVisible(current => !current) }}>
+          <SecretVisibilityIcon visible={visible} />
+        </button>
+      </span>
+    </label>
+  )
+}
 
 function DingTalkSettings({ loadDingTalk, saveDingTalk, testDingTalk, t }: Pick<Props, 'loadDingTalk' | 'saveDingTalk' | 'testDingTalk' | 't'>) {
   const [settings, setSettings] = useState<DingTalkPublicSettings | null>(null)
@@ -148,14 +214,8 @@ function DingTalkSettings({ loadDingTalk, saveDingTalk, testDingTalk, t }: Pick<
             {settings.configured ? t('settings.dingtalk.configured') : t('settings.dingtalk.notConfigured')}
           </div>
           <div className="dsh_notify_fields">
-            <label>
-              <span>Access Token</span>
-              <input type="password" autoComplete="off" value={accessToken} placeholder={settings.configured ? t('settings.dingtalk.keepValue') : ''} onChange={event => { setAccessToken(event.target.value); setStatus(null) }} />
-            </label>
-            <label>
-              <span>Signing Secret</span>
-              <input type="password" autoComplete="off" value={signingSecret} placeholder={settings.configured ? t('settings.dingtalk.keepValue') : ''} onChange={event => { setSigningSecret(event.target.value); setStatus(null) }} />
-            </label>
+            <SecretInput label="Access Token" value={accessToken} placeholder={settings.configured ? t('settings.dingtalk.keepValue') : ''} t={t} onChange={value => { setAccessToken(value); setStatus(null) }} />
+            <SecretInput label="Signing Secret" value={signingSecret} placeholder={settings.configured ? t('settings.dingtalk.keepValue') : ''} t={t} onChange={value => { setSigningSecret(value); setStatus(null) }} />
           </div>
           <div className="dsh_notify_subgroup">
             <strong>{t('settings.dingtalk.outcomes')}</strong>
@@ -225,6 +285,7 @@ export function NotifySettingsSection({ useSettings, set, requestPermission, sen
         <h3>{t('settings.system.title')}</h3>
         <Toggle checked={settings.systemNotifications} label={t('settings.system.enabled')} onChange={checked => { change('systemNotifications', checked) }} />
         <Toggle checked={settings.backgroundOnly} label={t('settings.system.backgroundOnly')} onChange={checked => { change('backgroundOnly', checked) }} />
+        <MaxBodyCharsSetting value={settings.maxBodyChars} set={set} t={t} />
         <div className="dsh_notify_permission">
           <span>{t('settings.permission.title')}: <b data-permission={permission}>{t(`settings.permission.${permission}`)}</b></span>
           <button type="button" onClick={() => { void authorize() }}>{t('settings.permission.request')}</button>

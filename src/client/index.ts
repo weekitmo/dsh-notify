@@ -63,7 +63,7 @@ export function apply(ctx: ClientContext): void {
     const api = notificationsApi()
     if (api === undefined) return
     const notification = createNotification(api, t(notificationTitleKey(entry.reason)), {
-      body: notificationBody(entry, t('notify.bodyFallback')),
+      body: notificationBody(entry, t('notify.bodyFallback'), settings.getSnapshot().maxBodyChars),
       tag: `dsh-notify-${entry.sessionId}-${String(entry.turn)}`,
     })
     if (notification === undefined) return
