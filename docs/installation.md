@@ -4,18 +4,18 @@ README 中的一行命令适合安装最新稳定版。需要固定版本、校�
 
 ## 固定版本安装
 
-当前版本：`v0.3.0`。
+当前版本：`v0.3.1`。
 
 从 Git tag 安装：
 
 ```sh
-dsh plugin --profile web add git+https://github.com/weekitmo/dsh-notify.git#v0.3.0
+dsh plugin --profile web add git+https://github.com/weekitmo/dsh-notify.git#v0.3.1
 ```
 
 也可以安装 Release 中由 CI 产出的预构建包，不需要 git checkout：
 
 ```sh
-dsh plugin --profile web add https://github.com/weekitmo/dsh-notify/releases/download/v0.3.0/dsh-notify-0.3.0.tgz
+dsh plugin --profile web add https://github.com/weekitmo/dsh-notify/releases/download/v0.3.1/dsh-notify-0.3.1.tgz
 ```
 
 ## SHA256SUMS
@@ -23,24 +23,24 @@ dsh plugin --profile web add https://github.com/weekitmo/dsh-notify/releases/dow
 Release 同时发布 `install.sh`、`install.bat` 和 `SHA256SUMS`。`install.sh` 面向 POSIX shell，`install.bat` 面向 Windows CMD；两者都支持通过 `DSH_NOTIFY_VERSION` 和 `DSH_NOTIFY_PROFILE` 固定版本与 profile。安全或可复现安装建议先固定版本，下载并校验资产，再安装本地包：
 
 ```sh
-mkdir dsh-notify-v0.3.0 && cd dsh-notify-v0.3.0
-curl -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.3.0/install.sh
-curl -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.3.0/install.bat
-curl -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.3.0/dsh-notify-0.3.0.tgz
-curl -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.3.0/SHA256SUMS
+mkdir dsh-notify-v0.3.1 && cd dsh-notify-v0.3.1
+curl -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.3.1/install.sh
+curl -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.3.1/install.bat
+curl -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.3.1/dsh-notify-0.3.1.tgz
+curl -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.3.1/SHA256SUMS
 sha256sum -c SHA256SUMS        # Linux
 # shasum -a 256 -c SHA256SUMS # macOS
-dsh plugin --profile web add "$PWD/dsh-notify-0.3.0.tgz"
+dsh plugin --profile web add "$PWD/dsh-notify-0.3.1.tgz"
 ```
 
 Windows CMD 可下载批处理安装器并用系统自带的 `certutil` 核对 `SHA256SUMS` 中对应的哈希：
 
 ```bat
-mkdir dsh-notify-v0.3.0 && cd dsh-notify-v0.3.0
-curl.exe -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.3.0/install.bat
-curl.exe -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.3.0/SHA256SUMS
+mkdir dsh-notify-v0.3.1 && cd dsh-notify-v0.3.1
+curl.exe -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.3.1/install.bat
+curl.exe -fsSLO https://github.com/weekitmo/dsh-notify/releases/download/v0.3.1/SHA256SUMS
 certutil -hashfile install.bat SHA256
-set DSH_NOTIFY_VERSION=v0.3.0
+set DSH_NOTIFY_VERSION=v0.3.1
 install.bat
 ```
 
@@ -49,7 +49,7 @@ install.bat
 ## 从源码安装
 
 ```sh
-git clone --branch v0.3.0 --depth 1 https://github.com/weekitmo/dsh-notify.git
+git clone --branch v0.3.1 --depth 1 https://github.com/weekitmo/dsh-notify.git
 cd dsh-notify
 corepack enable
 pnpm install --frozen-lockfile
